@@ -126,19 +126,20 @@ def trend(season_pct, recent_pct):
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 
+def show_tab(label: str, preds, player_df):
+    st.subheader(f"Series Predictions — {label}")
+    show_predictions(preds)
+    st.subheader(f"Top Players — {label}")
+    show_players(player_df)
+
+
 tab1, tab2, tab3 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison"])
 
 with tab1:
-    st.subheader("Series Predictions — Full Season")
-    show_predictions(season_preds)
-    st.subheader("Top Players — Full Season")
-    show_players(season_player_df)
+    show_tab("Full Season", season_preds, season_player_df)
 
 with tab2:
-    st.subheader(f"Series Predictions — Last {RECENT_GAMES} Games")
-    show_predictions(recent_preds)
-    st.subheader(f"Top Players — Last {RECENT_GAMES} Games")
-    show_players(recent_player_df)
+    show_tab(f"Last {RECENT_GAMES} Games", recent_preds, recent_player_df)
 
 with tab3:
     st.subheader("How Recent Form Changes the Predictions")
