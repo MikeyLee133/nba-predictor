@@ -108,7 +108,7 @@ def _blended_score(
     Player scores are scaled to [0, 100] before blending.
     """
     full_name = ABBR_TO_FULL.get(abbr, abbr)
-    ts = team_scores.get(full_name, team_scores.get(abbr, 50.0))
+    ts = team_scores.get(full_name, 50.0)
     ps_raw = player_scores.get(abbr, 0.0)
     ps_norm = min(ps_raw * PLAYER_SCORE_SCALE, 100.0)
     return TEAM_SCORE_WEIGHT * ts + PLAYER_SCORE_WEIGHT * ps_norm
