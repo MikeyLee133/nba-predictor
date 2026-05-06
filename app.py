@@ -9,14 +9,14 @@ import streamlit as st
 import pandas as pd
 from nba_predictor.config import (
     PLAYOFF_MATCHUPS, ABBR_TO_FULL, TEAM_STAT_WEIGHTS,
-    PLAYER_STAT_WEIGHTS, RECENT_GAMES, TOP_PLAYERS_PER_TEAM,
+    PLAYER_STAT_WEIGHTS, RECENT_GAMES, TOP_PLAYERS_PER_TEAM, SEASON,
 )
 from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
 
-st.title("🏀 NBA Playoff Predictor — 2025-26")
+st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
 st.caption("Stats sourced from the official NBA Stats API")
 
 _, col_btn = st.columns([6, 1])

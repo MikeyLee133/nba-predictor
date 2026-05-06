@@ -130,7 +130,7 @@ def predict_series(
     home_score = _blended_score(home, team_scores, player_scores) * HOME_COURT_MULTIPLIER
     away_score = _blended_score(away, team_scores, player_scores)
 
-    total = home_score + away_score or 1.0
+    total = max(home_score + away_score, 1.0)
     home_win_pct = round(home_score / total * 100, 1)
     away_win_pct = round(100 - home_win_pct, 1)
     predicted_winner = home if home_win_pct >= 50 else away

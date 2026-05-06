@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from nba_api.stats.endpoints import LeagueDashTeamStats, LeagueDashPlayerStats
 
-from nba_predictor.config import SEASON, RECENT_GAMES
+from nba_predictor.config import SEASON
 
 CACHE_DIR = Path(__file__).parent.parent / ".data_cache"
 CACHE_TTL_HOURS = 24
