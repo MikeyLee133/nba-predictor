@@ -88,4 +88,5 @@ def print_model_summary() -> None:
     print("\nPlayer stat weights (40% of final score, top-3 by PER):")
     print(tabulate(player_rows, headers=["Stat", "Weight"], tablefmt="simple"))
 
-    print("\nHome-court advantage: +4% multiplier on home team score\n")
+    print("\nHome-court advantage: +4% multiplier on home team score")
+    print("Recent form: last 15 games weighted at 40%, full season at 60%\n")

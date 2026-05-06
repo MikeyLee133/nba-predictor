@@ -19,8 +19,8 @@ def run():
     # ── 1. Fetch ──────────────────────────────────────────────────────────────
     print("\nFetching data from NBA Stats API...")
     try:
-        team_df   = fetch_team_df()
-        player_df = fetch_player_df()
+        team_df   = fetch_team_df(last_n=0)
+        player_df = fetch_player_df(last_n=0)
     except FetchError as e:
         print(f"\n❌ Error: {e}")
         print("   Check your internet connection and try again.")

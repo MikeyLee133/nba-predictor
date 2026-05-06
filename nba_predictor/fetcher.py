@@ -2,16 +2,17 @@
 fetcher.py
 ----------
 Fetches NBA stats from the official NBA Stats API via nba_api.
-Caches results to disk for 24 hours to avoid repeated API calls.
+Caches each result to disk for 24 hours.
 """
 
 import time
-import pickle
 from pathlib import Path
 from datetime import datetime, timedelta
 
 import pandas as pd
 from nba_api.stats.endpoints import LeagueDashTeamStats, LeagueDashPlayerStats
+
+from nba_predictor.config import RECENT_GAMES
 
 SEASON = "2025-26"
 CACHE_DIR = Path(__file__).parent.parent / ".data_cache"
@@ -46,79 +47,77 @@ def _load_or_build(name: str, force: bool, build_fn) -> pd.DataFrame:
     return df
 
 
-def fetch_team_df(force: bool = False) -> pd.DataFrame:
-    """Return a clean team stats DataFrame from the NBA Stats API."""
-    def build():
-        base = LeagueDashTeamStats(
-            season=SEASON,
-            per_mode_detailed="PerGame",
-            measure_type_detailed_defense="Base",
-            timeout=30,
-        ).get_data_frames()[0]
+# ── Team stats ────────────────────────────────────────────────────────────────
 
-        time.sleep(1)
+def _fetch_raw_team_df(last_n: int = 0) -> pd.DataFrame:
+    base = LeagueDashTeamStats(
+        season=SEASON,
+        per_mode_detailed="PerGame",
+        measure_type_detailed_defense="Base",
+        last_n_games=str(last_n),
+        timeout=30,
+    ).get_data_frames()[0]
 
-        adv = LeagueDashTeamStats(
-            season=SEASON,
-            per_mode_detailed="PerGame",
-            measure_type_detailed_defense="Advanced",
-            timeout=30,
-        ).get_data_frames()[0]
+    time.sleep(1)
 
-        team = base[["TEAM_NAME", "PTS", "FG3M", "AST"]].rename(columns={
-            "TEAM_NAME": "team",
-            "PTS":       "pts",
-            "FG3M":      "3pm",
-            "AST":       "ast",
-        })
-        advanced = adv[["TEAM_NAME", "PACE", "OFF_RATING", "DEF_RATING", "NET_RATING"]].rename(columns={
-            "TEAM_NAME":  "team",
-            "PACE":       "pace",
-            "OFF_RATING": "ortg",
-            "DEF_RATING": "drtg",
-            "NET_RATING": "net_rtg",
-        })
-        return team.merge(advanced, on="team")
+    adv = LeagueDashTeamStats(
+        season=SEASON,
+        per_mode_detailed="PerGame",
+        measure_type_detailed_defense="Advanced",
+        last_n_games=str(last_n),
+        timeout=30,
+    ).get_data_frames()[0]
 
-    return _load_or_build("team_stats", force, build)
+    team = base[["TEAM_NAME", "PTS", "FG3M", "AST"]].rename(columns={
+        "TEAM_NAME": "team", "PTS": "pts", "FG3M": "3pm", "AST": "ast",
+    })
+    advanced = adv[["TEAM_NAME", "PACE", "OFF_RATING", "DEF_RATING", "NET_RATING"]].rename(columns={
+        "TEAM_NAME": "team", "PACE": "pace", "OFF_RATING": "ortg",
+        "DEF_RATING": "drtg", "NET_RATING": "net_rtg",
+    })
+    return team.merge(advanced, on="team")
 
 
-def fetch_player_df(force: bool = False) -> pd.DataFrame:
-    """Return a clean player stats DataFrame from the NBA Stats API."""
-    def build():
-        base = LeagueDashPlayerStats(
-            season=SEASON,
-            per_mode_detailed="PerGame",
-            measure_type_detailed_defense="Base",
-            timeout=30,
-        ).get_data_frames()[0]
+def fetch_team_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
+    """Return team stats DataFrame. last_n=0 means full season."""
+    name = f"team_stats_{last_n}"
+    return _load_or_build(name, force, lambda: _fetch_raw_team_df(last_n))
 
-        time.sleep(1)
 
-        adv = LeagueDashPlayerStats(
-            season=SEASON,
-            per_mode_detailed="PerGame",
-            measure_type_detailed_defense="Advanced",
-            timeout=30,
-        ).get_data_frames()[0]
+# ── Player stats ──────────────────────────────────────────────────────────────
 
-        players = base[["PLAYER_NAME", "TEAM_ABBREVIATION", "PTS", "AST", "REB", "FG3M"]].rename(columns={
-            "PLAYER_NAME":       "player",
-            "TEAM_ABBREVIATION": "team_id",
-            "PTS":               "pts_per_g",
-            "AST":               "ast_per_g",
-            "REB":               "trb_per_g",
-            "FG3M":              "fg3_per_g",
-        })
+def _fetch_raw_player_df(last_n: int = 0) -> pd.DataFrame:
+    base = LeagueDashPlayerStats(
+        season=SEASON,
+        per_mode_detailed="PerGame",
+        measure_type_detailed_defense="Base",
+        last_n_games=str(last_n),
+        timeout=30,
+    ).get_data_frames()[0]
 
-        # PIE (Player Impact Estimate) is the NBA's equivalent of PER; scale to similar range
-        pie_df = adv[["PLAYER_NAME", "TEAM_ABBREVIATION", "PIE"]].rename(columns={
-            "PLAYER_NAME":       "player",
-            "TEAM_ABBREVIATION": "team_id",
-            "PIE":               "per",
-        }).copy()
-        pie_df["per"] = pie_df["per"] * 100
+    time.sleep(1)
 
-        return players.merge(pie_df, on=["player", "team_id"], how="left")
+    adv = LeagueDashPlayerStats(
+        season=SEASON,
+        per_mode_detailed="PerGame",
+        measure_type_detailed_defense="Advanced",
+        last_n_games=str(last_n),
+        timeout=30,
+    ).get_data_frames()[0]
 
-    return _load_or_build("player_stats", force, build)
+    players = base[["PLAYER_NAME", "TEAM_ABBREVIATION", "PTS", "AST", "REB", "FG3M"]].rename(columns={
+        "PLAYER_NAME": "player", "TEAM_ABBREVIATION": "team_id",
+        "PTS": "pts_per_g", "AST": "ast_per_g", "REB": "trb_per_g", "FG3M": "fg3_per_g",
+    })
+    pie_df = adv[["PLAYER_NAME", "TEAM_ABBREVIATION", "PIE"]].rename(columns={
+        "PLAYER_NAME": "player", "TEAM_ABBREVIATION": "team_id", "PIE": "per",
+    }).copy()
+    pie_df["per"] = pie_df["per"] * 100
+
+    return players.merge(pie_df, on=["player", "team_id"], how="left")
+
+
+def fetch_player_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
+    """Return player stats DataFrame. last_n=0 means full season."""
+    name = f"player_stats_{last_n}"
+    return _load_or_build(name, force, lambda: _fetch_raw_player_df(last_n))

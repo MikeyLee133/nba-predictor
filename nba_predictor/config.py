@@ -56,6 +56,10 @@ PLAYOFF_MATCHUPS = [
 TEAM_SCORE_WEIGHT = 0.60
 PLAYER_SCORE_WEIGHT = 0.40
 
+# Recent form: number of games and how much they influence the final score
+RECENT_GAMES = 15
+RECENT_FORM_WEIGHT = 0.40  # 40% recent form, 60% full season
+
 # Home-court advantage multiplier applied to the home team's blended score
 HOME_COURT_MULTIPLIER = 1.04
 
