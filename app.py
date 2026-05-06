@@ -9,7 +9,7 @@ import streamlit as st
 import pandas as pd
 from nba_predictor.config import (
     PLAYOFF_MATCHUPS, ABBR_TO_FULL, TEAM_STAT_WEIGHTS,
-    PLAYER_STAT_WEIGHTS, RECENT_GAMES,
+    PLAYER_STAT_WEIGHTS, RECENT_GAMES, TOP_PLAYERS_PER_TEAM,
 )
 from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
@@ -93,7 +93,7 @@ def show_players(player_df):
     rows = []
     for abbr in playoff_teams:
         group = player_df[player_df["team_id"] == abbr].dropna(subset=["per"])
-        for _, row in group.nlargest(3, "per").iterrows():
+        for _, row in group.nlargest(TOP_PLAYERS_PER_TEAM, "per").iterrows():
             rows.append({
                 "Team":   abbr,
                 "Player": row.get("player", "?"),
@@ -145,17 +145,17 @@ with tab3:
     rows = []
     for s, r in zip(season_preds, recent_preds):
         rows.append({
-            "Series":          s.label,
-            "Home Team":       ABBR_TO_FULL.get(s.home, s.home),
-            "Season Win %":    s.home_win_pct,
-            "Recent Win %":    r.home_win_pct,
-            "Trend":           trend(s.home_win_pct, r.home_win_pct),
-            "Away Team":       ABBR_TO_FULL.get(s.away, s.away),
-            "Season Win % ":   s.away_win_pct,
-            "Recent Win % ":   r.away_win_pct,
-            "Trend ":          trend(s.away_win_pct, r.away_win_pct),
-            "Season Pick":     ABBR_TO_FULL.get(s.predicted_winner, s.predicted_winner),
-            "Recent Pick":     ABBR_TO_FULL.get(r.predicted_winner, r.predicted_winner),
+            "Series":           s.label,
+            "Home Team":        ABBR_TO_FULL.get(s.home, s.home),
+            "Home Season Win %": s.home_win_pct,
+            "Home Recent Win %": r.home_win_pct,
+            "Home Trend":       trend(s.home_win_pct, r.home_win_pct),
+            "Away Team":        ABBR_TO_FULL.get(s.away, s.away),
+            "Away Season Win %": s.away_win_pct,
+            "Away Recent Win %": r.away_win_pct,
+            "Away Trend":       trend(s.away_win_pct, r.away_win_pct),
+            "Season Pick":      ABBR_TO_FULL.get(s.predicted_winner, s.predicted_winner),
+            "Recent Pick":      ABBR_TO_FULL.get(r.predicted_winner, r.predicted_winner),
         })
     comp_df = pd.DataFrame(rows)
     st.dataframe(comp_df, use_container_width=True, hide_index=True)
