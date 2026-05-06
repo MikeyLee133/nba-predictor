@@ -9,7 +9,11 @@ All data arrives as arguments — no global state accessed here.
 
 import pandas as pd
 from tabulate import tabulate
-from nba_predictor.config import ABBR_TO_FULL, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS
+from nba_predictor.config import (
+    ABBR_TO_FULL, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
+    SEASON, TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT,
+    TOP_PLAYERS_PER_TEAM, RECENT_GAMES,
+)
 from nba_predictor.model import SeriesPrediction
 
 
@@ -21,7 +25,7 @@ def _full(abbr: str) -> str:
 def print_predictions(predictions: list[SeriesPrediction]) -> None:
     """Print a formatted table of series predictions."""
     print("\n" + "=" * 68)
-    print("  🏀  NBA PLAYOFF PREDICTOR — 2025-26 Second Round")
+    print(f"  🏀  NBA PLAYOFF PREDICTOR — {SEASON} Second Round")
     print("=" * 68)
 
     rows = []
@@ -44,7 +48,7 @@ def print_predictions(predictions: list[SeriesPrediction]) -> None:
     print()
 
 
-def print_top_players(player_df: pd.DataFrame, teams: list[str], top_n: int = 3) -> None:
+def print_top_players(player_df: pd.DataFrame, teams: list[str], top_n: int = TOP_PLAYERS_PER_TEAM) -> None:
     """Print top N players (by PER) for each team in the given list."""
     print("=" * 68)
     print("  📊  TOP PLAYERS FOR PLAYOFF TEAMS (by PER)")
@@ -82,11 +86,11 @@ def print_model_summary() -> None:
     team_rows  = [(s, f"{w*100:.0f}%") for s, w in TEAM_STAT_WEIGHTS.items()]
     player_rows = [(s, f"{w*100:.0f}%") for s, w in PLAYER_STAT_WEIGHTS.items()]
 
-    print("\nTeam stat weights (60% of final score):")
+    print(f"\nTeam stat weights ({TEAM_SCORE_WEIGHT*100:.0f}% of final score):")
     print(tabulate(team_rows, headers=["Stat", "Weight"], tablefmt="simple"))
 
-    print("\nPlayer stat weights (40% of final score, top-3 by PER):")
+    print(f"\nPlayer stat weights ({PLAYER_SCORE_WEIGHT*100:.0f}% of final score, top-{TOP_PLAYERS_PER_TEAM} by PER):")
     print(tabulate(player_rows, headers=["Stat", "Weight"], tablefmt="simple"))
 
     print("\nHome-court advantage: +4% multiplier on home team score")
-    print("Recent form: last 15 games weighted at 40%, full season at 60%\n")
+    print(f"Recent form: last {RECENT_GAMES} games\n")
