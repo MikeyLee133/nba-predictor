@@ -11,7 +11,7 @@ Run with:  python main.py
 
 import sys
 from nba_predictor.config import PLAYOFF_MATCHUPS
-from nba_predictor.scraper import fetch_team_stats_html, fetch_player_stats_html, ScraperError
+from nba_predictor.scraper import fetch_team_stats_html, fetch_player_stats_html, fetch_advanced_player_stats_html, ScraperError
 from nba_predictor.parser import parse_team_stats, parse_player_stats, ParseError
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
 from nba_predictor.display import print_predictions, print_top_players, print_model_summary
@@ -20,8 +20,9 @@ def run():
     # ── 1. Fetch ──────────────────────────────────────────────────────────────
     print("\nFetching data from Basketball Reference...")
     try:
-        team_html   = fetch_team_stats_html()
-        player_html = fetch_player_stats_html()
+        team_html     = fetch_team_stats_html()
+        player_html   = fetch_player_stats_html()
+        advanced_html = fetch_advanced_player_stats_html()
     except ScraperError as e:
         print(f"\n❌ Network error: {e}")
         print("   Check your internet connection and try again.")
@@ -31,7 +32,7 @@ def run():
     print("Parsing stats...")
     try:
         team_df   = parse_team_stats(team_html)
-        player_df = parse_player_stats(player_html)
+        player_df = parse_player_stats(player_html, advanced_html)
     except ParseError as e:
         print(f"\n❌ Parse error: {e}")
         sys.exit(1)

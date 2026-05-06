@@ -124,9 +124,9 @@ def parse_team_stats(html: str) -> pd.DataFrame:
     return merged.dropna(subset=["team"]).reset_index(drop=True)
 
 
-def parse_player_stats(html: str) -> pd.DataFrame:
+def parse_player_stats(html: str, advanced_html: str) -> pd.DataFrame:
     """
-    Parse the per-game player stats page into a player DataFrame.
+    Parse per-game and advanced player stats into a single DataFrame.
 
     Returned columns include: player, team_id, pts_per_g, ast_per_g,
     trb_per_g, fg3_per_g, fg_pct, efg_pct, per, ws
@@ -134,16 +134,27 @@ def parse_player_stats(html: str) -> pd.DataFrame:
     soup = BeautifulSoup(_uncomment(html), "html.parser")
     raw = _table_to_df(soup, "per_game_stats")
 
+    raw = raw.rename(columns={"name_display": "player", "team_name_abbr": "team_id"})
+
     numeric_cols = [
         "pts_per_g", "ast_per_g", "trb_per_g", "fg3_per_g",
-        "fg_pct", "efg_pct", "per", "ws",
+        "fg_pct", "efg_pct",
     ]
     df = _to_numeric(raw, numeric_cols)
 
-    print("  Player table columns:", list(df.columns[:15]))
     _require_columns(df, ["player", "team_id"], "Player stats table")
 
-    # Drop header-repeat rows Basketball Reference sometimes injects
     df = df[df["player"] != "Player"].copy()
+    df = df.dropna(subset=["team_id"]).reset_index(drop=True)
 
-    return df.dropna(subset=["team_id"]).reset_index(drop=True)
+    # Merge PER from the advanced stats page
+    adv_soup = BeautifulSoup(_uncomment(advanced_html), "html.parser")
+    adv_raw = _table_to_df(adv_soup, "advanced")
+    adv_raw = adv_raw.rename(columns={"name_display": "player", "team_name_abbr": "team_id"})
+    adv_raw = adv_raw[adv_raw["player"] != "Player"].copy()
+    adv_cols = [c for c in ["player", "team_id", "per", "ws"] if c in adv_raw.columns]
+    adv_df = _to_numeric(adv_raw[adv_cols], ["per", "ws"])
+
+    df = pd.merge(df, adv_df, on=["player", "team_id"], how="left")
+
+    return df

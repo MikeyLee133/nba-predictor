@@ -48,3 +48,12 @@ def fetch_player_stats_html() -> str:
     html = _get(url)
     time.sleep(CRAWL_DELAY)
     return html
+
+
+def fetch_advanced_player_stats_html() -> str:
+    """Return raw HTML of the advanced player stats page (contains PER)."""
+    url = f"{BASE_URL}/leagues/NBA_{SEASON}_advanced.html"
+    print(f"  GET {url}")
+    html = _get(url)
+    time.sleep(CRAWL_DELAY)
+    return html
