@@ -6,16 +6,14 @@ Run with:  streamlit run app.py
 """
 
 import streamlit as st
-import pandas as pd
 from nba_predictor.config import (
-    PLAYOFF_MATCHUPS, ABBR_TO_FULL, TEAM_STAT_WEIGHTS,
-    PLAYER_STAT_WEIGHTS, RECENT_GAMES, TOP_PLAYERS_PER_TEAM, SEASON,
+    PLAYOFF_MATCHUPS, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS, RECENT_GAMES, SEASON,
 )
 from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
+from nba_predictor.ui import show_tab, show_comparison, show_model_config
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
-
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
 st.caption("Stats sourced from the official NBA Stats API")
 
@@ -29,11 +27,12 @@ if refresh:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_all(force: bool = False):
-    season_team_df   = fetch_team_df(last_n=0,          force=force)
-    season_player_df = fetch_player_df(last_n=0,         force=force)
-    recent_team_df   = fetch_team_df(last_n=RECENT_GAMES, force=force)
-    recent_player_df = fetch_player_df(last_n=RECENT_GAMES, force=force)
-    return season_team_df, season_player_df, recent_team_df, recent_player_df
+    return (
+        fetch_team_df(last_n=0,           force=force),
+        fetch_player_df(last_n=0,          force=force),
+        fetch_team_df(last_n=RECENT_GAMES, force=force),
+        fetch_player_df(last_n=RECENT_GAMES, force=force),
+    )
 
 
 with st.spinner("Loading stats..."):
@@ -43,140 +42,17 @@ with st.spinner("Loading stats..."):
         st.error(f"Error fetching data: {e}")
         st.stop()
 
-season_preds = predict_all(
-    PLAYOFF_MATCHUPS,
-    build_team_scores(season_team_df),
-    build_player_scores(season_player_df),
-)
-recent_preds = predict_all(
-    PLAYOFF_MATCHUPS,
-    build_team_scores(recent_team_df),
-    build_player_scores(recent_player_df),
-)
-
+season_preds = predict_all(PLAYOFF_MATCHUPS, build_team_scores(season_team_df), build_player_scores(season_player_df))
+recent_preds = predict_all(PLAYOFF_MATCHUPS, build_team_scores(recent_team_df),  build_player_scores(recent_player_df))
 playoff_teams = sorted({abbr for home, away, _ in PLAYOFF_MATCHUPS for abbr in (home, away)})
-
-
-# ── Helper ────────────────────────────────────────────────────────────────────
-
-def predictions_df(preds):
-    rows = []
-    for p in preds:
-        rows.append({
-            "Series":           p.label,
-            "Home Team":        ABBR_TO_FULL.get(p.home, p.home),
-            "Home Win %":       p.home_win_pct,
-            "Away Team":        ABBR_TO_FULL.get(p.away, p.away),
-            "Away Win %":       p.away_win_pct,
-            "Predicted Winner": ABBR_TO_FULL.get(p.predicted_winner, p.predicted_winner),
-        })
-    return pd.DataFrame(rows)
-
-
-def show_predictions(preds):
-    st.dataframe(
-        predictions_df(preds),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Home Win %": st.column_config.ProgressColumn(
-                "Home Win %", min_value=0, max_value=100, format="%.1f%%"
-            ),
-            "Away Win %": st.column_config.ProgressColumn(
-                "Away Win %", min_value=0, max_value=100, format="%.1f%%"
-            ),
-        },
-    )
-
-
-def show_players(player_df):
-    rows = []
-    for abbr in playoff_teams:
-        group = player_df[player_df["team_id"] == abbr].dropna(subset=["per"])
-        for _, row in group.nlargest(TOP_PLAYERS_PER_TEAM, "per").iterrows():
-            rows.append({
-                "Team":   abbr,
-                "Player": row.get("player", "?"),
-                "PPG":    row.get("pts_per_g"),
-                "APG":    row.get("ast_per_g"),
-                "RPG":    row.get("trb_per_g"),
-                "PER":    row.get("per"),
-            })
-    st.dataframe(
-        pd.DataFrame(rows),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "PPG": st.column_config.NumberColumn(format="%.1f"),
-            "APG": st.column_config.NumberColumn(format="%.1f"),
-            "RPG": st.column_config.NumberColumn(format="%.1f"),
-            "PER": st.column_config.NumberColumn(format="%.1f"),
-        },
-    )
-
-
-def trend(season_pct, recent_pct):
-    diff = recent_pct - season_pct
-    if diff > 2:
-        return "↑"
-    elif diff < -2:
-        return "↓"
-    return "→"
-
-
-# ── Tabs ──────────────────────────────────────────────────────────────────────
-
-def show_tab(label: str, preds, player_df):
-    st.subheader(f"Series Predictions — {label}")
-    show_predictions(preds)
-    st.subheader(f"Top Players — {label}")
-    show_players(player_df)
-
 
 tab1, tab2, tab3 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison"])
 
 with tab1:
-    show_tab("Full Season", season_preds, season_player_df)
-
+    show_tab("Full Season", season_preds, season_player_df, playoff_teams)
 with tab2:
-    show_tab(f"Last {RECENT_GAMES} Games", recent_preds, recent_player_df)
-
+    show_tab(f"Last {RECENT_GAMES} Games", recent_preds, recent_player_df, playoff_teams)
 with tab3:
-    st.subheader("How Recent Form Changes the Predictions")
-    rows = []
-    for s, r in zip(season_preds, recent_preds):
-        rows.append({
-            "Series":           s.label,
-            "Home Team":        ABBR_TO_FULL.get(s.home, s.home),
-            "Home Season Win %": s.home_win_pct,
-            "Home Recent Win %": r.home_win_pct,
-            "Home Trend":       trend(s.home_win_pct, r.home_win_pct),
-            "Away Team":        ABBR_TO_FULL.get(s.away, s.away),
-            "Away Season Win %": s.away_win_pct,
-            "Away Recent Win %": r.away_win_pct,
-            "Away Trend":       trend(s.away_win_pct, r.away_win_pct),
-            "Season Pick":      ABBR_TO_FULL.get(s.predicted_winner, s.predicted_winner),
-            "Recent Pick":      ABBR_TO_FULL.get(r.predicted_winner, r.predicted_winner),
-        })
-    comp_df = pd.DataFrame(rows)
-    st.dataframe(comp_df, use_container_width=True, hide_index=True)
+    show_comparison(season_preds, recent_preds)
 
-    st.caption("↑ trending up  ·  ↓ trending down  ·  → roughly same (threshold: 2%)")
-
-# ── Model Config ──────────────────────────────────────────────────────────────
-
-with st.expander("Model Configuration"):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Team Stat Weights (60%)")
-        st.dataframe(
-            pd.DataFrame([{"Stat": s, "Weight": f"{w*100:.0f}%"} for s, w in TEAM_STAT_WEIGHTS.items()]),
-            hide_index=True, use_container_width=True,
-        )
-    with col2:
-        st.subheader("Player Stat Weights (40%)")
-        st.dataframe(
-            pd.DataFrame([{"Stat": s, "Weight": f"{w*100:.0f}%"} for s, w in PLAYER_STAT_WEIGHTS.items()]),
-            hide_index=True, use_container_width=True,
-        )
-    st.caption("Home-court advantage: +4% multiplier. Top 3 players by PER per team.")
+show_model_config(TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS)
