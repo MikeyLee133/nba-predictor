@@ -5,27 +5,10 @@ All constants, weights, and team mappings in one place.
 Tweak weights here without touching any other file.
 """
 
-SEASON = "2026"
-BASE_URL = "https://www.basketball-reference.com"
-
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-}
-
-# Polite delay between HTTP requests (seconds)
-CRAWL_DELAY = 2
+SEASON = "2025-26"
 
 # ── Team mappings ─────────────────────────────────────────────────────────────
 
-# Basketball Reference uses full team names in the stats tables
 ABBR_TO_FULL = {
     "DET": "Detroit Pistons",
     "CLE": "Cleveland Cavaliers",
@@ -37,7 +20,6 @@ ABBR_TO_FULL = {
     "MIN": "Minnesota Timberwolves",
 }
 
-# Reverse lookup: full name → abbreviation
 FULL_TO_ABBR = {v: k for k, v in ABBR_TO_FULL.items()}
 
 # ── Current playoff matchups ──────────────────────────────────────────────────
@@ -52,30 +34,26 @@ PLAYOFF_MATCHUPS = [
 
 # ── Model weights ─────────────────────────────────────────────────────────────
 
-# Blend ratio between team-level and player-level scores
-TEAM_SCORE_WEIGHT = 0.60
-PLAYER_SCORE_WEIGHT = 0.40
-
-# Recent form: number of games and how much they influence the final score
-RECENT_GAMES = 15
-RECENT_FORM_WEIGHT = 0.40  # 40% recent form, 60% full season
-
-# Home-court advantage multiplier applied to the home team's blended score
+TEAM_SCORE_WEIGHT    = 0.60
+PLAYER_SCORE_WEIGHT  = 0.40
 HOME_COURT_MULTIPLIER = 1.04
+
+# Recent form window (number of games)
+RECENT_GAMES = 15
 
 # Individual stat weights for the team composite score (must sum to 1.0)
 TEAM_STAT_WEIGHTS = {
     "net_rtg":  0.30,   # best single predictor of team quality
-    "drtg":     0.20,   # defensive rating  (lower = better)
+    "drtg":     0.20,   # defensive rating (lower = better)
     "ortg":     0.15,   # offensive rating
     "pts":      0.10,   # points scored per game
-    "opp_pts":  0.10,   # opponent points   (lower = better)
+    "opp_pts":  0.10,   # opponent points (lower = better)
     "ast":      0.05,
     "3pm":      0.05,
     "pace":     0.05,
 }
 
-# Stats where a LOWER value is better — these are inverted during normalization
+# Stats where a LOWER value is better — inverted during normalization
 INVERT_STATS = {"drtg", "opp_pts"}
 
 # Individual stat weights for the player star-power score (must sum to 1.0)
@@ -87,9 +65,5 @@ PLAYER_STAT_WEIGHTS = {
     "fg3_per_g": 0.10,
 }
 
-# Number of top players (by PER) used to represent each team
 TOP_PLAYERS_PER_TEAM = 3
-
-# Scale factor to bring raw player scores (~15–30) into the 0–100 range
-# Adjust if scores look unreasonably high or low after changes to PLAYER_STAT_WEIGHTS
-PLAYER_SCORE_SCALE = 2.5
+PLAYER_SCORE_SCALE   = 2.5

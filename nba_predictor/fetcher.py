@@ -12,9 +12,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from nba_api.stats.endpoints import LeagueDashTeamStats, LeagueDashPlayerStats
 
-from nba_predictor.config import RECENT_GAMES
-
-SEASON = "2025-26"
+from nba_predictor.config import SEASON, RECENT_GAMES
 CACHE_DIR = Path(__file__).parent.parent / ".data_cache"
 CACHE_TTL_HOURS = 24
 
