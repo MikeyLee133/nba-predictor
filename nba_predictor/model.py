@@ -49,7 +49,7 @@ def _min_max_normalize(series: pd.Series, invert: bool = False) -> pd.Series:
 
 # ── Score builders ────────────────────────────────────────────────────────────
 
-def build_team_scores(team_df: pd.DataFrame) -> dict[str, float]:
+def build_team_scores(team_df: pd.DataFrame, weights: dict | None = None) -> dict[str, float]:
     """
     Compute a composite score (0–100) for every team in team_df.
 
@@ -59,9 +59,11 @@ def build_team_scores(team_df: pd.DataFrame) -> dict[str, float]:
 
     Returns: {full_team_name: score}
     """
+    if weights is None:
+        weights = TEAM_STAT_WEIGHTS
     composite = pd.Series(0.0, index=team_df.index)
 
-    for stat, weight in TEAM_STAT_WEIGHTS.items():
+    for stat, weight in weights.items():
         if stat not in team_df.columns:
             continue
         invert = stat in INVERT_STATS
@@ -70,13 +72,15 @@ def build_team_scores(team_df: pd.DataFrame) -> dict[str, float]:
     return dict(zip(team_df["team"], composite * 100))
 
 
-def build_player_scores(player_df: pd.DataFrame) -> dict[str, float]:
+def build_player_scores(player_df: pd.DataFrame, weights: dict | None = None) -> dict[str, float]:
     """
     Compute a star-power score for each team based on its top N players by PER.
 
     Returns: {team_abbr: raw_score}
     Raw scores are not yet normalized to 0–100 (scaling happens in predict_series).
     """
+    if weights is None:
+        weights = PLAYER_STAT_WEIGHTS
     team_scores: dict[str, float] = {}
 
     for team_abbr, group in player_df.groupby("team_id"):
@@ -88,7 +92,7 @@ def build_player_scores(player_df: pd.DataFrame) -> dict[str, float]:
         top_n = valid.nlargest(TOP_PLAYERS_PER_TEAM, "per")
         score = sum(
             top_n[stat].mean() * weight
-            for stat, weight in PLAYER_STAT_WEIGHTS.items()
+            for stat, weight in weights.items()
             if stat in top_n.columns
         )
         team_scores[team_abbr] = score
@@ -102,16 +106,22 @@ def _blended_score(
     abbr: str,
     team_scores: dict[str, float],
     player_scores: dict[str, float],
+    team_w: float | None = None,
+    player_w: float | None = None,
 ) -> float:
     """
     Combine team and player scores into one blended value for a single team.
     Player scores are scaled to [0, 100] before blending.
     """
+    if team_w is None:
+        team_w = TEAM_SCORE_WEIGHT
+    if player_w is None:
+        player_w = PLAYER_SCORE_WEIGHT
     full_name = ABBR_TO_FULL.get(abbr, abbr)
     ts = team_scores.get(full_name, 50.0)
     ps_raw = player_scores.get(abbr, 0.0)
     ps_norm = min(ps_raw * PLAYER_SCORE_SCALE, 100.0)
-    return TEAM_SCORE_WEIGHT * ts + PLAYER_SCORE_WEIGHT * ps_norm
+    return team_w * ts + player_w * ps_norm
 
 
 def predict_series(
@@ -120,6 +130,9 @@ def predict_series(
     label: str,
     team_scores: dict[str, float],
     player_scores: dict[str, float],
+    team_w: float | None = None,
+    player_w: float | None = None,
+    home_mult: float | None = None,
 ) -> SeriesPrediction:
     """
     Predict the outcome of a playoff series between home and away teams.
@@ -127,8 +140,10 @@ def predict_series(
     Home-court advantage is applied as a multiplier to the home team's
     blended score (see config.HOME_COURT_MULTIPLIER).
     """
-    home_score = _blended_score(home, team_scores, player_scores) * HOME_COURT_MULTIPLIER
-    away_score = _blended_score(away, team_scores, player_scores)
+    if home_mult is None:
+        home_mult = HOME_COURT_MULTIPLIER
+    home_score = _blended_score(home, team_scores, player_scores, team_w, player_w) * home_mult
+    away_score = _blended_score(away, team_scores, player_scores, team_w, player_w)
 
     total = max(home_score + away_score, 1.0)
     home_win_pct = round(home_score / total * 100, 1)
@@ -149,9 +164,12 @@ def predict_all(
     matchups: list[tuple[str, str, str]],
     team_scores: dict[str, float],
     player_scores: dict[str, float],
+    team_w: float | None = None,
+    player_w: float | None = None,
+    home_mult: float | None = None,
 ) -> list[SeriesPrediction]:
     """Run predictions for a list of (home, away, label) matchup tuples."""
     return [
-        predict_series(home, away, label, team_scores, player_scores)
+        predict_series(home, away, label, team_scores, player_scores, team_w, player_w, home_mult)
         for home, away, label in matchups
     ]

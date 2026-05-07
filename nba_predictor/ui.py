@@ -8,7 +8,7 @@ All rendering logic lives here; app.py only wires data to these functions.
 import streamlit as st
 import pandas as pd
 
-from nba_predictor.config import ABBR_TO_FULL, TOP_PLAYERS_PER_TEAM, TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT
+from nba_predictor.config import ABBR_TO_FULL, TOP_PLAYERS_PER_TEAM
 from nba_predictor.model import SeriesPrediction
 
 
@@ -98,21 +98,3 @@ def show_comparison(season_preds: list[SeriesPrediction], recent_preds: list[Ser
     } for s, r in zip(season_preds, recent_preds)]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     st.caption("↑ trending up  ·  ↓ trending down  ·  → roughly same (threshold: 2%)")
-
-
-def show_model_config(team_stat_weights: dict, player_stat_weights: dict) -> None:
-    with st.expander("Model Configuration"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader(f"Team Stat Weights ({TEAM_SCORE_WEIGHT*100:.0f}%)")
-            st.dataframe(
-                pd.DataFrame([{"Stat": s, "Weight": f"{w*100:.0f}%"} for s, w in team_stat_weights.items()]),
-                hide_index=True, use_container_width=True,
-            )
-        with col2:
-            st.subheader(f"Player Stat Weights ({PLAYER_SCORE_WEIGHT*100:.0f}%)")
-            st.dataframe(
-                pd.DataFrame([{"Stat": s, "Weight": f"{w*100:.0f}%"} for s, w in player_stat_weights.items()]),
-                hide_index=True, use_container_width=True,
-            )
-        st.caption(f"Home-court advantage: +4% multiplier. Top {TOP_PLAYERS_PER_TEAM} players by PER per team.")
