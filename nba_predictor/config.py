@@ -66,3 +66,9 @@ PLAYER_STAT_WEIGHTS = {
 
 TOP_PLAYERS_PER_TEAM = 3
 PLAYER_SCORE_SCALE   = 2.5
+
+# ── Validation ────────────────────────────────────────────────────────────────
+
+assert abs(sum(TEAM_STAT_WEIGHTS.values())   - 1.0) < 1e-9, f"TEAM_STAT_WEIGHTS must sum to 1.0 (got {sum(TEAM_STAT_WEIGHTS.values()):.4f})"
+assert abs(sum(PLAYER_STAT_WEIGHTS.values()) - 1.0) < 1e-9, f"PLAYER_STAT_WEIGHTS must sum to 1.0 (got {sum(PLAYER_STAT_WEIGHTS.values()):.4f})"
+assert abs(TEAM_SCORE_WEIGHT + PLAYER_SCORE_WEIGHT - 1.0) < 1e-9, f"TEAM_SCORE_WEIGHT + PLAYER_SCORE_WEIGHT must sum to 1.0 (got {TEAM_SCORE_WEIGHT + PLAYER_SCORE_WEIGHT:.4f})"
