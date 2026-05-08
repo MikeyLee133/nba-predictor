@@ -19,7 +19,7 @@ nba_predictor/
 ## Install
 
 ```bash
-pip install requests pandas tabulate nba_api streamlit
+pip install -r requirements.txt
 ```
 
 ## Run
