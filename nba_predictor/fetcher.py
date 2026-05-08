@@ -87,7 +87,7 @@ def _fetch_raw_team_df(last_n: int = 0) -> pd.DataFrame:
 
 def fetch_team_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
     """Return team stats DataFrame. last_n=0 means full season."""
-    return _load_or_build(f"team_stats_{last_n}", force, lambda: _fetch_raw_team_df(last_n))
+    return _load_or_build(f"team_stats_{SEASON}_{last_n}", force, lambda: _fetch_raw_team_df(last_n))
 
 
 # ── Player stats ──────────────────────────────────────────────────────────────
@@ -106,4 +106,4 @@ def _fetch_raw_player_df(last_n: int = 0) -> pd.DataFrame:
 
 def fetch_player_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
     """Return player stats DataFrame. last_n=0 means full season."""
-    return _load_or_build(f"player_stats_{last_n}", force, lambda: _fetch_raw_player_df(last_n))
+    return _load_or_build(f"player_stats_{SEASON}_{last_n}", force, lambda: _fetch_raw_player_df(last_n))
