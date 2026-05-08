@@ -12,7 +12,7 @@ from tabulate import tabulate
 from nba_predictor.config import (
     ABBR_TO_FULL, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
     SEASON, TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT,
-    TOP_PLAYERS_PER_TEAM, RECENT_GAMES,
+    TOP_PLAYERS_PER_TEAM, RECENT_GAMES, HOME_COURT_MULTIPLIER,
 )
 from nba_predictor.model import SeriesPrediction
 
@@ -92,5 +92,6 @@ def print_model_summary() -> None:
     print(f"\nPlayer stat weights ({PLAYER_SCORE_WEIGHT*100:.0f}% of final score, top-{TOP_PLAYERS_PER_TEAM} by PER):")
     print(tabulate(player_rows, headers=["Stat", "Weight"], tablefmt="simple"))
 
-    print("\nHome-court advantage: +4% multiplier on home team score")
+    hca_pct = int((HOME_COURT_MULTIPLIER - 1) * 100)
+    print(f"\nHome-court advantage: +{hca_pct}% multiplier on home team score")
     print(f"Recent form: last {RECENT_GAMES} games\n")

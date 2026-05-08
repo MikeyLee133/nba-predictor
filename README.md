@@ -45,13 +45,13 @@ python main.py
 
 ### Data
 - **Team stats** — net rating, offensive/defensive ratings, pace, points, assists, 3PM
-- **Player stats** — PER (Player Efficiency Rating), points, assists, rebounds, 3PM for top 3 players per team
+- **Player stats** — PIE (Player Impact Estimate), points, assists, rebounds, 3PM for top 3 players per team
 
 ### Scoring
 
 1. **Team composite score (60% default)** — each of 8 stats is min-max normalized across all 30 teams, then multiplied by its weight (see `config.TEAM_STAT_WEIGHTS`)
 
-2. **Player star-power score (40% default)** — top 3 players by PER per team are averaged across 5 stats (see `config.PLAYER_STAT_WEIGHTS`)
+2. **Player star-power score (40% default)** — top 3 players by PIE per team are averaged across 5 stats (see `config.PLAYER_STAT_WEIGHTS`)
 
 3. **Blend + home-court** — the two scores are combined and the home team receives a +4% multiplier by default. Win probability is each team's share of the combined score.
 
