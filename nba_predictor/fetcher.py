@@ -78,7 +78,7 @@ def _fetch_raw_team_df(last_n: int = 0) -> pd.DataFrame:
     base_df, adv_df = _fetch_measures(
         LeagueDashTeamStats,
         last_n,
-        base_cols={"TEAM_NAME": "team", "PTS": "pts", "FG3M": "3pm", "AST": "ast"},
+        base_cols={"TEAM_NAME": "team", "PTS": "pts", "FG3M": "3pm", "AST": "ast", "OPP_PTS": "opp_pts"},
         adv_cols={"TEAM_NAME": "team", "PACE": "pace", "OFF_RATING": "ortg",
                   "DEF_RATING": "drtg", "NET_RATING": "net_rtg"},
     )
