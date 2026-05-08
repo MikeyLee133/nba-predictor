@@ -44,17 +44,16 @@ RECENT_GAMES = 15
 # Individual stat weights for the team composite score (must sum to 1.0)
 TEAM_STAT_WEIGHTS = {
     "net_rtg":  0.30,   # best single predictor of team quality
-    "drtg":     0.20,   # defensive rating (lower = better)
+    "drtg":     0.30,   # defensive rating (lower = better)
     "ortg":     0.15,   # offensive rating
     "pts":      0.10,   # points scored per game
-    "opp_pts":  0.10,   # opponent points (lower = better)
     "ast":      0.05,
     "3pm":      0.05,
     "pace":     0.05,
 }
 
 # Stats where a LOWER value is better — inverted during normalization
-INVERT_STATS = {"drtg", "opp_pts"}
+INVERT_STATS = {"drtg"}
 
 # Individual stat weights for the player star-power score (must sum to 1.0)
 PLAYER_STAT_WEIGHTS = {

@@ -55,7 +55,6 @@ with st.sidebar:
         "drtg":     st.slider("Def. Rating",     0, 100, int(TEAM_STAT_WEIGHTS["drtg"]     * 100), key="t_drtg"),
         "ortg":     st.slider("Off. Rating",     0, 100, int(TEAM_STAT_WEIGHTS["ortg"]     * 100), key="t_ortg"),
         "pts":      st.slider("Points/G",        0, 100, int(TEAM_STAT_WEIGHTS["pts"]      * 100), key="t_pts"),
-        "opp_pts":  st.slider("Opp. Points/G",   0, 100, int(TEAM_STAT_WEIGHTS["opp_pts"]  * 100), key="t_opp_pts"),
         "ast":      st.slider("Assists/G",       0, 100, int(TEAM_STAT_WEIGHTS["ast"]      * 100), key="t_ast"),
         "3pm":      st.slider("3-Pointers/G",    0, 100, int(TEAM_STAT_WEIGHTS["3pm"]      * 100), key="t_3pm"),
         "pace":     st.slider("Pace",            0, 100, int(TEAM_STAT_WEIGHTS["pace"]     * 100), key="t_pace"),
