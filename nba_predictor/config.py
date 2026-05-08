@@ -32,6 +32,8 @@ PLAYOFF_MATCHUPS = [
     ("SAS", "MIN", "West Semis: San Antonio vs Minnesota"),
 ]
 
+PLAYOFF_ROUND = "Second Round"
+
 # ── Model weights ─────────────────────────────────────────────────────────────
 
 TEAM_SCORE_WEIGHT    = 0.60
@@ -40,6 +42,9 @@ HOME_COURT_MULTIPLIER = 1.04
 
 # Recent form window (number of games)
 RECENT_GAMES = 15
+
+# Disk cache TTL in hours
+CACHE_TTL_HOURS = 24
 
 # Individual stat weights for the team composite score (must sum to 1.0)
 TEAM_STAT_WEIGHTS = {

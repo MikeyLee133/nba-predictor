@@ -12,7 +12,7 @@ from tabulate import tabulate
 from nba_predictor.config import (
     ABBR_TO_FULL, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
     SEASON, TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT,
-    TOP_PLAYERS_PER_TEAM, RECENT_GAMES, HOME_COURT_MULTIPLIER,
+    TOP_PLAYERS_PER_TEAM, RECENT_GAMES, HOME_COURT_MULTIPLIER, PLAYOFF_ROUND,
 )
 from nba_predictor.model import SeriesPrediction
 
@@ -25,7 +25,7 @@ def _full(abbr: str) -> str:
 def print_predictions(predictions: list[SeriesPrediction]) -> None:
     """Print a formatted table of series predictions."""
     print("\n" + "=" * 68)
-    print(f"  🏀  NBA PLAYOFF PREDICTOR — {SEASON} Second Round")
+    print(f"  🏀  NBA PLAYOFF PREDICTOR — {SEASON} {PLAYOFF_ROUND}")
     print("=" * 68)
 
     rows = []
