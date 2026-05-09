@@ -35,12 +35,16 @@ def _cache_valid(path: Path) -> bool:
 def _load_or_build(name: str, force: bool, build_fn) -> pd.DataFrame:
     CACHE_DIR.mkdir(exist_ok=True)
     path = _cache_path(name)
+    t0 = time.perf_counter()
     if not force and _cache_valid(path):
-        return pd.read_pickle(path)
+        df = pd.read_pickle(path)
+        print(f"[cache hit]  {name} ({(time.perf_counter() - t0) * 1000:.0f}ms)")
+        return df
     try:
         df = build_fn()
     except Exception as e:
         raise FetchError(f"NBA API error fetching {name}: {e}")
+    print(f"[API fetch]  {name} ({(time.perf_counter() - t0) * 1000:.0f}ms)")
     df.to_pickle(path)
     return df
 
