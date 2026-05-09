@@ -70,6 +70,13 @@ def show_players(player_df: pd.DataFrame, playoff_teams: list[str]) -> None:
 def show_tab(label: str, preds: list[SeriesPrediction], player_df: pd.DataFrame, playoff_teams: list[str]) -> None:
     st.subheader(f"Series Predictions — {label}")
     show_predictions(preds)
+    st.download_button(
+        "⬇ Download CSV",
+        data=predictions_df(preds).to_csv(index=False),
+        file_name=f"predictions_{label.replace(' ', '_')}.csv",
+        mime="text/csv",
+        key=f"dl_{label}",
+    )
     st.subheader(f"Top Players — {label}")
     show_players(player_df, playoff_teams)
 

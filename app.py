@@ -13,7 +13,7 @@ from nba_predictor.config import (
     TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT, HOME_COURT_MULTIPLIER,
     RECENT_GAMES, SEASON, PLAYOFF_ROUND, HISTORY_FILE,
 )
-from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
+from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError, CACHE_DIR
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
 from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history
@@ -22,7 +22,15 @@ st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout=
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
 st.caption("Stats sourced from the official NBA Stats API")
 
-_, col_btn = st.columns([6, 1])
+col_fresh, col_btn = st.columns([6, 1])
+with col_fresh:
+    _cache_file = CACHE_DIR / f"team_stats_{SEASON}_0.pkl"
+    if _cache_file.exists():
+        _age = time.time() - _cache_file.stat().st_mtime
+        _freshness = f"Stats from {int(_age / 60)}m ago" if _age < 3600 else f"Stats from {_age / 3600:.1f}h ago"
+    else:
+        _freshness = "Stats not yet cached"
+    st.caption(_freshness)
 with col_btn:
     refresh = st.button("🔄 Refresh")
 
@@ -31,8 +39,15 @@ if refresh:
 
 # ── Sidebar: adjustable model weights ─────────────────────────────────────────
 
+_WEIGHT_KEYS = ["blend_team", "hca", "t_net_rtg", "t_drtg", "t_ortg", "t_pts",
+                "t_ast", "t_3pm", "t_pace", "p_pts", "p_per", "p_ast", "p_reb", "p_3pm"]
+
 with st.sidebar:
     st.header("Model Weights")
+    if st.button("↺ Reset to defaults", key="reset_weights"):
+        for k in _WEIGHT_KEYS:
+            st.session_state.pop(k, None)
+        st.rerun()
 
     st.subheader("Blend")
     team_blend = st.slider(
