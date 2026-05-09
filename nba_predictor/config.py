@@ -34,6 +34,8 @@ PLAYOFF_MATCHUPS = [
 
 PLAYOFF_ROUND = "Second Round"
 
+HISTORY_FILE = "prediction_history.json"
+
 # ── Model weights ─────────────────────────────────────────────────────────────
 
 TEAM_SCORE_WEIGHT    = 0.60

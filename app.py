@@ -6,15 +6,17 @@ Run with:  streamlit run app.py
 """
 
 import time
+from pathlib import Path
 import streamlit as st
 from nba_predictor.config import (
     PLAYOFF_MATCHUPS, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
     TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT, HOME_COURT_MULTIPLIER,
-    RECENT_GAMES, SEASON,
+    RECENT_GAMES, SEASON, PLAYOFF_ROUND, HISTORY_FILE,
 )
 from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
-from nba_predictor.ui import show_tab, show_comparison
+from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
+from nba_predictor.ui import show_tab, show_comparison, show_history
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
@@ -110,7 +112,7 @@ recent_preds = predict_all(
 _model_ms = (time.perf_counter() - _t0) * 1000
 playoff_teams = sorted({abbr for home, away, _ in PLAYOFF_MATCHUPS for abbr in (home, away)})
 
-tab1, tab2, tab3 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison"])
+tab1, tab2, tab3, tab4 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "History"])
 
 with tab1:
     show_tab("Full Season", season_preds, season_player_df, playoff_teams)
@@ -118,5 +120,8 @@ with tab2:
     show_tab(f"Last {RECENT_GAMES} Games", recent_preds, recent_player_df, playoff_teams)
 with tab3:
     show_comparison(season_preds, recent_preds)
+with tab4:
+    history_path = Path(HISTORY_FILE)
+    show_history(season_preds, PLAYOFF_ROUND, history_path)
 
 st.caption(f"Model computed in {_model_ms:.1f}ms")

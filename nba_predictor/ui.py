@@ -5,6 +5,8 @@ Streamlit UI components for the NBA playoff predictor.
 All rendering logic lives here; app.py only wires data to these functions.
 """
 
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 
@@ -98,3 +100,67 @@ def show_comparison(season_preds: list[SeriesPrediction], recent_preds: list[Ser
     } for s, r in zip(season_preds, recent_preds)]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     st.caption("↑ trending up  ·  ↓ trending down  ·  → roughly same (threshold: 2%)")
+
+
+def show_history(
+    current_preds: list[SeriesPrediction],
+    round_label: str,
+    history_path: Path,
+) -> None:
+    from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
+
+    st.subheader("Prediction History")
+
+    col_save, col_spacer = st.columns([2, 5])
+    with col_save:
+        if st.button("💾 Save current predictions"):
+            save_predictions(current_preds, round_label, history_path)
+            st.success(f"Saved {len(current_preds)} predictions for {round_label}")
+
+    records = load_history(history_path)
+    if not records:
+        st.info("No predictions saved yet. Click 'Save current predictions' to start tracking.")
+        return
+
+    # Accuracy summary
+    stats = accuracy_stats(records)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Correct", stats["correct"])
+    m2.metric("Total Resolved", stats["total"])
+    m3.metric("Accuracy", f"{stats['pct']}%" if stats["total"] else "—")
+
+    st.divider()
+
+    # Record outcomes for unresolved series
+    unresolved = [r for r in records if r["actual_winner"] is None]
+    if unresolved:
+        st.subheader("Record Outcomes")
+        for r in unresolved:
+            col_label, col_pick = st.columns([3, 2])
+            with col_label:
+                st.write(r["series_label"])
+            with col_pick:
+                winner = st.selectbox(
+                    "Actual winner",
+                    options=["—", ABBR_TO_FULL.get(r["home"], r["home"]), ABBR_TO_FULL.get(r["away"], r["away"])],
+                    key=f"outcome_{r['series_label']}",
+                )
+                if winner != "—":
+                    from nba_predictor.config import FULL_TO_ABBR
+                    abbr = FULL_TO_ABBR.get(winner, winner)
+                    record_outcome(r["series_label"], abbr, history_path)
+                    st.rerun()
+
+    st.divider()
+
+    # Full history table
+    st.subheader("All Predictions")
+    rows = [{
+        "Round":            r["round"],
+        "Series":           r["series_label"],
+        "Predicted":        ABBR_TO_FULL.get(r["predicted_winner"], r["predicted_winner"]),
+        "Actual":           ABBR_TO_FULL.get(r["actual_winner"], "—") if r["actual_winner"] else "—",
+        "Result":           "✓" if r["correct"] else ("✗" if r["correct"] is False else "—"),
+        "Home Win %":       r["home_win_pct"],
+    } for r in records]
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
