@@ -74,6 +74,17 @@ PLAYER_STAT_WEIGHTS = {
 TOP_PLAYERS_PER_TEAM = 3
 PLAYER_SCORE_SCALE   = 2.5
 
+# Historical NBA playoff series win rates for the current leader
+# Key: (leader_wins, trailer_wins) → probability the leader wins the series
+SERIES_COMEBACK_RATES = {
+    (1, 0): 0.60,
+    (2, 0): 0.82,
+    (2, 1): 0.68,
+    (3, 0): 0.99,
+    (3, 1): 0.96,
+    (3, 2): 0.83,
+}
+
 # ── Validation ────────────────────────────────────────────────────────────────
 
 assert abs(sum(TEAM_STAT_WEIGHTS.values())   - 1.0) < 1e-9, f"TEAM_STAT_WEIGHTS must sum to 1.0 (got {sum(TEAM_STAT_WEIGHTS.values()):.4f})"

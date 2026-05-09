@@ -102,6 +102,48 @@ def show_comparison(season_preds: list[SeriesPrediction], recent_preds: list[Ser
     st.caption("↑ trending up  ·  ↓ trending down  ·  → roughly same (threshold: 2%)")
 
 
+def show_live_series(preds: list[SeriesPrediction]) -> None:
+    from nba_predictor.model import adjust_for_series_score
+
+    st.subheader("In-Series Adjustment")
+    st.caption("Set the current series score to blend model predictions with historical comeback rates.")
+
+    _SCORE_OPTIONS = ["0-0", "1-0", "0-1", "2-0", "0-2", "2-1", "1-2",
+                      "3-0", "0-3", "3-1", "1-3", "3-2", "2-3"]
+
+    rows = []
+    for p in preds:
+        score = st.selectbox(
+            f"{ABBR_TO_FULL.get(p.home, p.home)} vs {ABBR_TO_FULL.get(p.away, p.away)}",
+            options=_SCORE_OPTIONS,
+            key=f"score_{p.label}",
+        )
+        home_w, away_w = map(int, score.split("-"))
+        adjusted = adjust_for_series_score(p, home_w, away_w)
+        rows.append({
+            "Series":           p.label,
+            "Score":            score,
+            "Home Win %":       adjusted.home_win_pct,
+            "Away Win %":       adjusted.away_win_pct,
+            "Predicted Winner": ABBR_TO_FULL.get(adjusted.predicted_winner, adjusted.predicted_winner),
+        })
+
+    st.dataframe(
+        pd.DataFrame(rows),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Home Win %": st.column_config.ProgressColumn(
+                "Home Win %", min_value=0, max_value=100, format="%.1f%%"
+            ),
+            "Away Win %": st.column_config.ProgressColumn(
+                "Away Win %", min_value=0, max_value=100, format="%.1f%%"
+            ),
+        },
+    )
+    st.caption("Blends model prediction 50/50 with historical NBA series comeback rates.")
+
+
 def show_history(
     current_preds: list[SeriesPrediction],
     round_label: str,

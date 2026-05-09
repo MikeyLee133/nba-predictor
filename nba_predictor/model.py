@@ -18,6 +18,7 @@ from nba_predictor.config import (
     PLAYER_SCORE_SCALE,
     TOP_PLAYERS_PER_TEAM,
     ABBR_TO_FULL,
+    SERIES_COMEBACK_RATES,
 )
 
 
@@ -163,6 +164,37 @@ def predict_series(
         away_win_pct=away_win_pct,
         predicted_winner=predicted_winner,
         label=label,
+    )
+
+
+def adjust_for_series_score(
+    prediction: SeriesPrediction,
+    home_wins: int,
+    away_wins: int,
+) -> SeriesPrediction:
+    """
+    Blend the model's win probability with historical NBA series comeback rates.
+    At 0-0 the prediction is unchanged. As the series progresses, historical
+    survival rates pull the probability toward the current leader.
+    """
+    if home_wins == 0 and away_wins == 0:
+        return prediction
+
+    if home_wins > away_wins:
+        historical_home_pct = SERIES_COMEBACK_RATES.get((home_wins, away_wins), 0.5) * 100
+    else:
+        trailer_rate = SERIES_COMEBACK_RATES.get((away_wins, home_wins), 0.5)
+        historical_home_pct = (1 - trailer_rate) * 100
+
+    new_home_pct = round((prediction.home_win_pct + historical_home_pct) / 2, 1)
+    new_away_pct = round(100 - new_home_pct, 1)
+    return SeriesPrediction(
+        home=prediction.home,
+        away=prediction.away,
+        home_win_pct=new_home_pct,
+        away_win_pct=new_away_pct,
+        predicted_winner=prediction.home if new_home_pct >= 50 else prediction.away,
+        label=prediction.label,
     )
 
 
