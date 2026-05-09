@@ -12,10 +12,17 @@ streamlit run app.py
 python main.py
 
 # Install dependencies
-pip install requests pandas tabulate nba_api streamlit
-```
+pip install -r requirements.txt
 
-No test suite or linter is configured.
+# Run all tests
+pytest
+
+# Run a single test file
+pytest tests/test_model.py
+
+# Run a single test
+pytest tests/test_model.py::test_team_scores_better_team_scores_higher
+```
 
 ## Architecture
 
@@ -38,7 +45,7 @@ display.py      tabulate-based printing (CLI only)
 
 **PIE, not PER.** The player metric column is named `per` throughout the codebase, but the data source is the NBA API's `PIE` (Player Impact Estimate) field, multiplied by 100 to approximate PER's numeric range. This happens in `fetcher.py:_fetch_raw_player_df`.
 
-**Disk cache lives in `.data_cache/`** as `.pkl` files, keyed by stat type and `last_n` window (e.g. `team_stats_0.pkl`, `player_stats_15.pkl`). TTL is 24 hours. The Streamlit refresh button calls `st.cache_data.clear()` then re-fetches with `force=True`. The Streamlit in-memory cache TTL is 1 hour (separate from the disk cache).
+**Disk cache lives in `.data_cache/`** as `.pkl` files, keyed by season, stat type, and `last_n` window (e.g. `team_stats_2025-26_0.pkl`, `player_stats_2025-26_15.pkl`). TTL is 24 hours. The Streamlit refresh button calls `st.cache_data.clear()` then re-fetches with `force=True`. The Streamlit in-memory cache TTL is 1 hour (separate from the disk cache).
 
 **Sidebar weights are live but not persisted.** Adjusting sliders in the web app rerenders predictions instantly but resets on page reload. To change defaults, edit `config.py`.
 
