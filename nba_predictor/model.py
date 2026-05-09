@@ -72,7 +72,11 @@ def build_team_scores(team_df: pd.DataFrame, weights: dict | None = None) -> dic
     return dict(zip(team_df["team"], composite * 100))
 
 
-def build_player_scores(player_df: pd.DataFrame, weights: dict | None = None) -> dict[str, float]:
+def build_player_scores(
+    player_df: pd.DataFrame,
+    weights: dict | None = None,
+    unavailable: set[str] | None = None,
+) -> dict[str, float]:
     """
     Compute a star-power score for each team based on its top N players by PER.
 
@@ -81,6 +85,8 @@ def build_player_scores(player_df: pd.DataFrame, weights: dict | None = None) ->
     """
     if weights is None:
         weights = PLAYER_STAT_WEIGHTS
+    if unavailable:
+        player_df = player_df[~player_df["player"].isin(unavailable)]
     team_scores: dict[str, float] = {}
 
     for team_abbr, group in player_df.groupby("team_id"):

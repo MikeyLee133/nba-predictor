@@ -78,6 +78,10 @@ with st.sidebar:
     total_player = sum(raw_player.values()) or 1
     player_stat_weights = {k: v / total_player for k, v in raw_player.items()}
 
+    st.divider()
+    st.subheader("Injuries / Unavailable")
+    st.caption("Excluded from player star-power scoring")
+
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_all(force: bool = False):
@@ -96,21 +100,31 @@ with st.spinner("Loading stats..."):
         st.error(f"Error fetching data: {e}")
         st.stop()
 
+# Populate injury multiselect now that player data is loaded
+playoff_teams = sorted({abbr for home, away, _ in PLAYOFF_MATCHUPS for abbr in (home, away)})
+playoff_players = (
+    season_player_df[season_player_df["team_id"].isin(playoff_teams)]
+    .dropna(subset=["per"])
+    .sort_values("per", ascending=False)["player"]
+    .tolist()
+)
+with st.sidebar:
+    unavailable = set(st.multiselect("Players", options=playoff_players, key="unavailable"))
+
 _t0 = time.perf_counter()
 season_preds = predict_all(
     PLAYOFF_MATCHUPS,
     build_team_scores(season_team_df, weights=team_stat_weights),
-    build_player_scores(season_player_df, weights=player_stat_weights),
+    build_player_scores(season_player_df, weights=player_stat_weights, unavailable=unavailable),
     team_w=team_w, player_w=player_w, home_mult=home_mult,
 )
 recent_preds = predict_all(
     PLAYOFF_MATCHUPS,
     build_team_scores(recent_team_df, weights=team_stat_weights),
-    build_player_scores(recent_player_df, weights=player_stat_weights),
+    build_player_scores(recent_player_df, weights=player_stat_weights, unavailable=unavailable),
     team_w=team_w, player_w=player_w, home_mult=home_mult,
 )
 _model_ms = (time.perf_counter() - _t0) * 1000
-playoff_teams = sorted({abbr for home, away, _ in PLAYOFF_MATCHUPS for abbr in (home, away)})
 
 tab1, tab2, tab3, tab4 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "History"])
 
