@@ -42,17 +42,30 @@ if refresh:
 with st.sidebar:
     st.header("Model Weights")
 
-    # Keys must stay in sync with the slider key= parameters below
-    _WEIGHT_KEYS = ["blend_team", "hca", "t_net_rtg", "t_drtg", "t_ortg", "t_pts",
-                    "t_ast", "t_3pm", "t_pace", "p_pts", "p_per", "p_ast", "p_reb", "p_3pm"]
+    # Single source of truth for defaults — used by sliders and the reset button
+    _DEFAULTS = {
+        "blend_team": int(TEAM_SCORE_WEIGHT * 100),
+        "hca":        int((HOME_COURT_MULTIPLIER - 1) * 100),
+        "t_net_rtg":  int(TEAM_STAT_WEIGHTS["net_rtg"]  * 100),
+        "t_drtg":     int(TEAM_STAT_WEIGHTS["drtg"]     * 100),
+        "t_ortg":     int(TEAM_STAT_WEIGHTS["ortg"]     * 100),
+        "t_pts":      int(TEAM_STAT_WEIGHTS["pts"]      * 100),
+        "t_ast":      int(TEAM_STAT_WEIGHTS["ast"]      * 100),
+        "t_3pm":      int(TEAM_STAT_WEIGHTS["3pm"]      * 100),
+        "t_pace":     int(TEAM_STAT_WEIGHTS["pace"]     * 100),
+        "p_pts":      int(PLAYER_STAT_WEIGHTS["pts_per_g"] * 100),
+        "p_per":      int(PLAYER_STAT_WEIGHTS["per"]       * 100),
+        "p_ast":      int(PLAYER_STAT_WEIGHTS["ast_per_g"] * 100),
+        "p_reb":      int(PLAYER_STAT_WEIGHTS["trb_per_g"] * 100),
+        "p_3pm":      int(PLAYER_STAT_WEIGHTS["fg3_per_g"] * 100),
+    }
     if st.button("↺ Reset to defaults", key="reset_weights"):
-        for k in _WEIGHT_KEYS:
-            st.session_state.pop(k, None)
+        st.session_state.update(_DEFAULTS)
         st.rerun()
 
     st.subheader("Blend")
     team_blend = st.slider(
-        "Team stats weight (%)", 0, 100, int(TEAM_SCORE_WEIGHT * 100), key="blend_team",
+        "Team stats weight (%)", 0, 100, _DEFAULTS["blend_team"], key="blend_team",
         help="Percentage of the final score from team-level stats; remainder goes to player star power",
     )
     player_blend = 100 - team_blend
@@ -61,7 +74,7 @@ with st.sidebar:
     player_w = player_blend / 100
 
     hca = st.slider(
-        "Home court advantage (%)", 0, 10, int((HOME_COURT_MULTIPLIER - 1) * 100), key="hca",
+        "Home court advantage (%)", 0, 10, _DEFAULTS["hca"], key="hca",
         help="Bonus multiplier applied to the home team's score",
     )
     home_mult = 1 + hca / 100
@@ -70,13 +83,13 @@ with st.sidebar:
     st.subheader("Team Stat Weights")
     st.caption("Drag to set relative importance — auto-normalized to 100%")
     raw_team = {
-        "net_rtg":  st.slider("Net Rating",      0, 100, int(TEAM_STAT_WEIGHTS["net_rtg"]  * 100), key="t_net_rtg"),
-        "drtg":     st.slider("Def. Rating",     0, 100, int(TEAM_STAT_WEIGHTS["drtg"]     * 100), key="t_drtg"),
-        "ortg":     st.slider("Off. Rating",     0, 100, int(TEAM_STAT_WEIGHTS["ortg"]     * 100), key="t_ortg"),
-        "pts":      st.slider("Points/G",        0, 100, int(TEAM_STAT_WEIGHTS["pts"]      * 100), key="t_pts"),
-        "ast":      st.slider("Assists/G",       0, 100, int(TEAM_STAT_WEIGHTS["ast"]      * 100), key="t_ast"),
-        "3pm":      st.slider("3-Pointers/G",    0, 100, int(TEAM_STAT_WEIGHTS["3pm"]      * 100), key="t_3pm"),
-        "pace":     st.slider("Pace",            0, 100, int(TEAM_STAT_WEIGHTS["pace"]     * 100), key="t_pace"),
+        "net_rtg":  st.slider("Net Rating",      0, 100, _DEFAULTS["t_net_rtg"], key="t_net_rtg"),
+        "drtg":     st.slider("Def. Rating",     0, 100, _DEFAULTS["t_drtg"],    key="t_drtg"),
+        "ortg":     st.slider("Off. Rating",     0, 100, _DEFAULTS["t_ortg"],    key="t_ortg"),
+        "pts":      st.slider("Points/G",        0, 100, _DEFAULTS["t_pts"],     key="t_pts"),
+        "ast":      st.slider("Assists/G",       0, 100, _DEFAULTS["t_ast"],     key="t_ast"),
+        "3pm":      st.slider("3-Pointers/G",    0, 100, _DEFAULTS["t_3pm"],     key="t_3pm"),
+        "pace":     st.slider("Pace",            0, 100, _DEFAULTS["t_pace"],    key="t_pace"),
     }
     total_team = sum(raw_team.values()) or 1
     team_stat_weights = {k: v / total_team for k, v in raw_team.items()}
@@ -85,11 +98,11 @@ with st.sidebar:
     st.subheader("Player Stat Weights")
     st.caption("Drag to set relative importance — auto-normalized to 100%")
     raw_player = {
-        "pts_per_g": st.slider("Points/G",     0, 100, int(PLAYER_STAT_WEIGHTS["pts_per_g"] * 100), key="p_pts"),
-        "per":       st.slider("PER",          0, 100, int(PLAYER_STAT_WEIGHTS["per"]       * 100), key="p_per"),
-        "ast_per_g": st.slider("Assists/G",    0, 100, int(PLAYER_STAT_WEIGHTS["ast_per_g"] * 100), key="p_ast"),
-        "trb_per_g": st.slider("Rebounds/G",   0, 100, int(PLAYER_STAT_WEIGHTS["trb_per_g"] * 100), key="p_reb"),
-        "fg3_per_g": st.slider("3-Pointers/G", 0, 100, int(PLAYER_STAT_WEIGHTS["fg3_per_g"] * 100), key="p_3pm"),
+        "pts_per_g": st.slider("Points/G",     0, 100, _DEFAULTS["p_pts"], key="p_pts"),
+        "per":       st.slider("PER",          0, 100, _DEFAULTS["p_per"], key="p_per"),
+        "ast_per_g": st.slider("Assists/G",    0, 100, _DEFAULTS["p_ast"], key="p_ast"),
+        "trb_per_g": st.slider("Rebounds/G",   0, 100, _DEFAULTS["p_reb"], key="p_reb"),
+        "fg3_per_g": st.slider("3-Pointers/G", 0, 100, _DEFAULTS["p_3pm"], key="p_3pm"),
     }
     total_player = sum(raw_player.values()) or 1
     player_stat_weights = {k: v / total_player for k, v in raw_player.items()}
