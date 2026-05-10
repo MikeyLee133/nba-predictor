@@ -32,6 +32,14 @@ ABBR_TO_FULL = {
     "ATL": "Atlanta Hawks",
     "BKN": "Brooklyn Nets",
     "CHI": "Chicago Bulls",
+    "NOP": "New Orleans Pelicans",
+    "TOR": "Toronto Raptors",
+    "UTA": "Utah Jazz",
+    "LAC": "Los Angeles Clippers",
+    "SAC": "Sacramento Kings",
+    "ORL": "Orlando Magic",
+    "CHA": "Charlotte Hornets",
+    "POR": "Portland Trail Blazers",
 }
 
 FULL_TO_ABBR = {v: k for k, v in ABBR_TO_FULL.items()}

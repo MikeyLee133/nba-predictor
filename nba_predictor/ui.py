@@ -14,6 +14,7 @@ from nba_predictor.config import ABBR_TO_FULL, FULL_TO_ABBR, TOP_PLAYERS_PER_TEA
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
 from nba_predictor.model import SeriesPrediction, adjust_for_series_score
 from nba_predictor.backtest import BacktestResult, backtest_accuracy
+from nba_predictor.ml_model import TrainedModel, feature_importances
 
 
 def predictions_df(preds: list[SeriesPrediction]) -> pd.DataFrame:
@@ -243,3 +244,49 @@ def show_backtest(all_results: list[BacktestResult]) -> None:
             "Home Win %": r.home_win_pct,
         } for r in season_results]
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def show_ml_predictions(
+    ml_preds: list[SeriesPrediction],
+    model: TrainedModel | None,
+    weighted_preds: list[SeriesPrediction],
+) -> None:
+    st.subheader("ML Model — Logistic Regression")
+    st.caption("Trained on historical playoff series outcomes. Features are stat differentials (home − away).")
+
+    if not ml_preds or model is None:
+        st.info("Click '▶ Train ML Model' to fetch historical stats and train the model.")
+        return
+
+    st.caption(f"Trained on {model.n_samples} historical series · Training accuracy: {model.train_accuracy}%")
+
+    # Predictions comparison
+    st.subheader("Predictions vs Weighted Model")
+    rows = []
+    for ml, wt in zip(ml_preds, weighted_preds):
+        rows.append({
+            "Series":          ml.label,
+            "ML Pick":         ABBR_TO_FULL.get(ml.predicted_winner, ml.predicted_winner),
+            "ML Home Win %":   ml.home_win_pct,
+            "Weighted Pick":   ABBR_TO_FULL.get(wt.predicted_winner, wt.predicted_winner),
+            "Wtd Home Win %":  wt.home_win_pct,
+            "Agreement":       "✓" if ml.predicted_winner == wt.predicted_winner else "✗",
+        })
+    st.dataframe(
+        pd.DataFrame(rows),
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "ML Home Win %":  st.column_config.ProgressColumn("ML Home Win %",  min_value=0, max_value=100, format="%.1f%%"),
+            "Wtd Home Win %": st.column_config.ProgressColumn("Wtd Home Win %", min_value=0, max_value=100, format="%.1f%%"),
+        },
+    )
+
+    # Feature importances
+    st.divider()
+    st.subheader("What the Model Learned")
+    st.caption("Coefficients show which stats drive predictions. Positive = favours the home team when they lead in that stat.")
+    imp = feature_importances(model)
+    imp_sorted = sorted(imp.items(), key=lambda x: abs(x[1]), reverse=True)
+    imp_df = pd.DataFrame([{"Stat": k, "Coefficient": round(v, 3)} for k, v in imp_sorted])
+    st.bar_chart(imp_df.set_index("Stat")["Coefficient"])

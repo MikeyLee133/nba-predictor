@@ -2,5 +2,6 @@ nba_api>=1.11.4
 pandas>=2.2.3
 pytest>=7.0
 requests>=2.32.3
+scikit-learn>=1.0
 streamlit>=1.57.0
 tabulate>=0.10.0

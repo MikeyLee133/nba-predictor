@@ -18,7 +18,9 @@ from nba_predictor.model import build_team_scores, build_player_scores, predict_
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
 from nba_predictor.backtest import run_season_backtest
 from nba_predictor.historical import HISTORICAL_PLAYOFFS
-from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history, show_backtest
+from nba_predictor.ml_model import build_training_records, train, predict_win_probability, feature_importances, get_team_stats
+from nba_predictor.model import SeriesPrediction
+from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history, show_backtest, show_ml_predictions
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
@@ -157,7 +159,7 @@ recent_preds = predict_all(
 )
 _model_ms = (time.perf_counter() - _t0) * 1000
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "Live Series", "History", "Backtest"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "Live Series", "History", "Backtest", "ML Model"])
 
 with tab1:
     show_tab("Full Season", season_preds, season_player_df, playoff_teams)
@@ -186,5 +188,38 @@ with tab6:
                     st.error(f"Could not fetch {hist_season}: {e}")
         st.session_state["backtest_results"] = backtest_results
     show_backtest(st.session_state.get("backtest_results", []))
+with tab7:
+    if st.button("▶ Train ML Model"):
+        season_dfs = {}
+        for hist_season in HISTORICAL_PLAYOFFS:
+            with st.spinner(f"Fetching {hist_season} stats..."):
+                try:
+                    season_dfs[hist_season] = fetch_team_df(season=hist_season)
+                except FetchError as e:
+                    st.error(f"Could not fetch {hist_season}: {e}")
+        if season_dfs:
+            records = build_training_records(HISTORICAL_PLAYOFFS, season_dfs)
+            ml_model = train(records)
+            ml_preds = []
+            for home, away, label in PLAYOFF_MATCHUPS:
+                h_stats = get_team_stats(season_team_df, home)
+                a_stats = get_team_stats(season_team_df, away)
+                if h_stats and a_stats:
+                    home_prob = predict_win_probability(ml_model, h_stats, a_stats)
+                    home_pct  = round(home_prob * 100, 1)
+                    ml_preds.append(SeriesPrediction(
+                        home=home, away=away,
+                        home_win_pct=home_pct,
+                        away_win_pct=round(100 - home_pct, 1),
+                        predicted_winner=home if home_pct >= 50 else away,
+                        label=label,
+                    ))
+            st.session_state["ml_model"]  = ml_model
+            st.session_state["ml_preds"]  = ml_preds
+    show_ml_predictions(
+        st.session_state.get("ml_preds", []),
+        st.session_state.get("ml_model"),
+        season_preds,
+    )
 
 st.caption(f"Model computed in {_model_ms:.1f}ms")
