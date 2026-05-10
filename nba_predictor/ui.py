@@ -258,7 +258,8 @@ def show_ml_predictions(
         st.info("Click '▶ Train ML Model' to fetch historical stats and train the model.")
         return
 
-    st.caption(f"Trained on {model.n_samples} historical series · Training accuracy: {model.train_accuracy}%")
+    cv_str = f"  ·  Cross-val accuracy: {model.cv_accuracy}%" if model.cv_accuracy is not None else ""
+    st.caption(f"Trained on {model.n_samples} historical series · Training accuracy: {model.train_accuracy}%{cv_str}")
 
     # Predictions comparison
     st.subheader("Predictions vs Weighted Model")
