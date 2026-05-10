@@ -13,6 +13,7 @@ import pandas as pd
 from nba_predictor.config import ABBR_TO_FULL, FULL_TO_ABBR, TOP_PLAYERS_PER_TEAM
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
 from nba_predictor.model import SeriesPrediction, adjust_for_series_score
+from nba_predictor.backtest import BacktestResult, backtest_accuracy
 
 
 def predictions_df(preds: list[SeriesPrediction]) -> pd.DataFrame:
@@ -209,3 +210,36 @@ def show_history(
         "Home Win %":       r["home_win_pct"],
     } for r in records]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def show_backtest(all_results: list[BacktestResult]) -> None:
+    st.subheader("Historical Backtesting")
+    st.caption("How well the model predicted past playoff series using that season's stats.")
+
+    if not all_results:
+        st.info("No backtest results yet — click 'Run Backtest' in the app.")
+        return
+
+    # Overall accuracy
+    overall = backtest_accuracy(all_results)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Overall Correct", f"{overall['correct']} / {overall['total']}")
+    m2.metric("Overall Accuracy", f"{overall['pct']}%")
+    m3.metric("Seasons Tested", len({r.season for r in all_results}))
+
+    st.divider()
+
+    # Per-season breakdown
+    seasons = sorted({r.season for r in all_results}, reverse=True)
+    for season in seasons:
+        season_results = [r for r in all_results if r.season == season]
+        stats = backtest_accuracy(season_results)
+        st.subheader(f"{season} — {stats['correct']}/{stats['total']} ({stats['pct']}%)")
+        rows = [{
+            "Series":    r.series_label,
+            "Predicted": ABBR_TO_FULL.get(r.predicted_winner, r.predicted_winner),
+            "Actual":    ABBR_TO_FULL.get(r.actual_winner, r.actual_winner),
+            "Result":    "✓" if r.correct else "✗",
+            "Home Win %": r.home_win_pct,
+        } for r in season_results]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)

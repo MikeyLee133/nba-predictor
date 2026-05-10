@@ -49,10 +49,10 @@ def _load_or_build(name: str, force: bool, build_fn) -> pd.DataFrame:
     return df
 
 
-def _fetch_measures(endpoint_cls, last_n: int, base_cols: dict, adv_cols: dict):
+def _fetch_measures(endpoint_cls, last_n: int, base_cols: dict, adv_cols: dict, season: str = SEASON):
     """Fetch Base and Advanced measures from an endpoint, rename columns, and return both."""
     base = endpoint_cls(
-        season=SEASON,
+        season=season,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Base",
         last_n_games=str(last_n),
@@ -62,7 +62,7 @@ def _fetch_measures(endpoint_cls, last_n: int, base_cols: dict, adv_cols: dict):
     time.sleep(1)
 
     adv = endpoint_cls(
-        season=SEASON,
+        season=season,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Advanced",
         last_n_games=str(last_n),
@@ -77,36 +77,38 @@ def _fetch_measures(endpoint_cls, last_n: int, base_cols: dict, adv_cols: dict):
 
 # ── Team stats ────────────────────────────────────────────────────────────────
 
-def _fetch_raw_team_df(last_n: int = 0) -> pd.DataFrame:
+def _fetch_raw_team_df(last_n: int = 0, season: str = SEASON) -> pd.DataFrame:
     base_df, adv_df = _fetch_measures(
         LeagueDashTeamStats,
         last_n,
         base_cols={"TEAM_NAME": "team", "PTS": "pts", "FG3M": "3pm", "AST": "ast"},
         adv_cols={"TEAM_NAME": "team", "PACE": "pace", "OFF_RATING": "ortg",
                   "DEF_RATING": "drtg", "NET_RATING": "net_rtg"},
+        season=season,
     )
     return base_df.merge(adv_df, on="team")
 
 
-def fetch_team_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
+def fetch_team_df(last_n: int = 0, force: bool = False, season: str = SEASON) -> pd.DataFrame:
     """Return team stats DataFrame. last_n=0 means full season."""
-    return _load_or_build(f"team_stats_{SEASON}_{last_n}", force, lambda: _fetch_raw_team_df(last_n))
+    return _load_or_build(f"team_stats_{season}_{last_n}", force, lambda: _fetch_raw_team_df(last_n, season))
 
 
 # ── Player stats ──────────────────────────────────────────────────────────────
 
-def _fetch_raw_player_df(last_n: int = 0) -> pd.DataFrame:
+def _fetch_raw_player_df(last_n: int = 0, season: str = SEASON) -> pd.DataFrame:
     base_df, adv_df = _fetch_measures(
         LeagueDashPlayerStats,
         last_n,
         base_cols={"PLAYER_NAME": "player", "TEAM_ABBREVIATION": "team_id",
                    "PTS": "pts_per_g", "AST": "ast_per_g", "REB": "trb_per_g", "FG3M": "fg3_per_g"},
         adv_cols={"PLAYER_NAME": "player", "TEAM_ABBREVIATION": "team_id", "PIE": "per"},
+        season=season,
     )
     adv_df["per"] = adv_df["per"] * 100  # scale PIE to approximate PER range
     return base_df.merge(adv_df, on=["player", "team_id"], how="left")
 
 
-def fetch_player_df(last_n: int = 0, force: bool = False) -> pd.DataFrame:
+def fetch_player_df(last_n: int = 0, force: bool = False, season: str = SEASON) -> pd.DataFrame:
     """Return player stats DataFrame. last_n=0 means full season."""
-    return _load_or_build(f"player_stats_{SEASON}_{last_n}", force, lambda: _fetch_raw_player_df(last_n))
+    return _load_or_build(f"player_stats_{season}_{last_n}", force, lambda: _fetch_raw_player_df(last_n, season))

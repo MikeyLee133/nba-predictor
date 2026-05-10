@@ -16,7 +16,9 @@ from nba_predictor.config import (
 from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError, CACHE_DIR
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
-from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history
+from nba_predictor.backtest import run_season_backtest
+from nba_predictor.historical import HISTORICAL_PLAYOFFS
+from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history, show_backtest
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")
@@ -155,7 +157,7 @@ recent_preds = predict_all(
 )
 _model_ms = (time.perf_counter() - _t0) * 1000
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "Live Series", "History"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Full Season", f"Last {RECENT_GAMES} Games", "Comparison", "Live Series", "History", "Backtest"])
 
 with tab1:
     show_tab("Full Season", season_preds, season_player_df, playoff_teams)
@@ -168,5 +170,21 @@ with tab4:
 with tab5:
     history_path = Path(HISTORY_FILE)
     show_history(season_preds, PLAYOFF_ROUND, history_path)
+with tab6:
+    if st.button("▶ Run Backtest"):
+        backtest_results = []
+        for hist_season, data in HISTORICAL_PLAYOFFS.items():
+            with st.spinner(f"Fetching {hist_season} stats..."):
+                try:
+                    hist_team_df   = fetch_team_df(season=hist_season)
+                    hist_player_df = fetch_player_df(season=hist_season)
+                    backtest_results += run_season_backtest(
+                        hist_season, data["matchups"], data["outcomes"],
+                        hist_team_df, hist_player_df,
+                    )
+                except FetchError as e:
+                    st.error(f"Could not fetch {hist_season}: {e}")
+        st.session_state["backtest_results"] = backtest_results
+    show_backtest(st.session_state.get("backtest_results", []))
 
 st.caption(f"Model computed in {_model_ms:.1f}ms")

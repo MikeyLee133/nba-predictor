@@ -10,6 +10,7 @@ SEASON = "2025-26"
 # ── Team mappings ─────────────────────────────────────────────────────────────
 
 ABBR_TO_FULL = {
+    # Current playoff teams
     "DET": "Detroit Pistons",
     "CLE": "Cleveland Cavaliers",
     "NYK": "New York Knicks",
@@ -18,6 +19,19 @@ ABBR_TO_FULL = {
     "LAL": "Los Angeles Lakers",
     "SAS": "San Antonio Spurs",
     "MIN": "Minnesota Timberwolves",
+    # Historical playoff teams (for backtesting)
+    "BOS": "Boston Celtics",
+    "IND": "Indiana Pacers",
+    "DAL": "Dallas Mavericks",
+    "DEN": "Denver Nuggets",
+    "MIA": "Miami Heat",
+    "GSW": "Golden State Warriors",
+    "PHX": "Phoenix Suns",
+    "MEM": "Memphis Grizzlies",
+    "MIL": "Milwaukee Bucks",
+    "ATL": "Atlanta Hawks",
+    "BKN": "Brooklyn Nets",
+    "CHI": "Chicago Bulls",
 }
 
 FULL_TO_ABBR = {v: k for k, v in ABBR_TO_FULL.items()}
