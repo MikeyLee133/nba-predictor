@@ -10,8 +10,9 @@ from pathlib import Path
 import streamlit as st
 import pandas as pd
 
-from nba_predictor.config import ABBR_TO_FULL, TOP_PLAYERS_PER_TEAM
-from nba_predictor.model import SeriesPrediction
+from nba_predictor.config import ABBR_TO_FULL, FULL_TO_ABBR, TOP_PLAYERS_PER_TEAM
+from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
+from nba_predictor.model import SeriesPrediction, adjust_for_series_score
 
 
 def predictions_df(preds: list[SeriesPrediction]) -> pd.DataFrame:
@@ -110,8 +111,6 @@ def show_comparison(season_preds: list[SeriesPrediction], recent_preds: list[Ser
 
 
 def show_live_series(preds: list[SeriesPrediction]) -> None:
-    from nba_predictor.model import adjust_for_series_score
-
     st.subheader("In-Series Adjustment")
     st.caption("Set the current series score to blend model predictions with historical comeback rates.")
 
@@ -156,8 +155,6 @@ def show_history(
     round_label: str,
     history_path: Path,
 ) -> None:
-    from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
-
     st.subheader("Prediction History")
 
     col_save, col_spacer = st.columns([2, 5])
@@ -195,7 +192,6 @@ def show_history(
                     key=f"outcome_{r['series_label']}",
                 )
                 if winner != "—":
-                    from nba_predictor.config import FULL_TO_ABBR
                     abbr = FULL_TO_ABBR.get(winner, winner)
                     record_outcome(r["series_label"], abbr, history_path)
                     st.rerun()

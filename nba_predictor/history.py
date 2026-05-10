@@ -8,6 +8,7 @@ accuracy can be tracked across playoff rounds.
 import json
 from pathlib import Path
 
+from nba_predictor.config import SEASON
 from nba_predictor.model import SeriesPrediction
 
 
@@ -27,7 +28,7 @@ def save_predictions(predictions: list[SeriesPrediction], round_label: str, path
         if (p.label, round_label) in existing:
             continue
         records.append({
-            "season":           _season_from_path(path),
+            "season":           SEASON,
             "round":            round_label,
             "series_label":     p.label,
             "home":             p.home,
@@ -69,6 +70,3 @@ def accuracy_stats(records: list[dict]) -> dict:
     }
 
 
-def _season_from_path(path: Path) -> str:
-    from nba_predictor.config import SEASON
-    return SEASON

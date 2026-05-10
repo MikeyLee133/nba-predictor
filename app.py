@@ -39,11 +39,12 @@ if refresh:
 
 # ── Sidebar: adjustable model weights ─────────────────────────────────────────
 
-_WEIGHT_KEYS = ["blend_team", "hca", "t_net_rtg", "t_drtg", "t_ortg", "t_pts",
-                "t_ast", "t_3pm", "t_pace", "p_pts", "p_per", "p_ast", "p_reb", "p_3pm"]
-
 with st.sidebar:
     st.header("Model Weights")
+
+    # Keys must stay in sync with the slider key= parameters below
+    _WEIGHT_KEYS = ["blend_team", "hca", "t_net_rtg", "t_drtg", "t_ortg", "t_pts",
+                    "t_ast", "t_3pm", "t_pace", "p_pts", "p_per", "p_ast", "p_reb", "p_3pm"]
     if st.button("↺ Reset to defaults", key="reset_weights"):
         for k in _WEIGHT_KEYS:
             st.session_state.pop(k, None)
