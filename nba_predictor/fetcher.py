@@ -5,6 +5,7 @@ Fetches NBA stats from the official NBA Stats API via nba_api.
 Caches each result to disk for 24 hours.
 """
 
+import logging
 import time
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -13,6 +14,8 @@ import pandas as pd
 from nba_api.stats.endpoints import LeagueDashTeamStats, LeagueDashPlayerStats
 
 from nba_predictor.config import SEASON, CACHE_TTL_HOURS
+
+logger = logging.getLogger(__name__)
 
 CACHE_DIR = Path(__file__).parent.parent / ".data_cache"
 
@@ -38,13 +41,13 @@ def _load_or_build(name: str, force: bool, build_fn) -> pd.DataFrame:
     t0 = time.perf_counter()
     if not force and _cache_valid(path):
         df = pd.read_pickle(path)
-        print(f"[cache hit]  {name} ({(time.perf_counter() - t0) * 1000:.0f}ms)")
+        logger.debug("cache hit   %s (%.0fms)", name, (time.perf_counter() - t0) * 1000)
         return df
     try:
         df = build_fn()
     except Exception as e:
         raise FetchError(f"NBA API error fetching {name}: {e}")
-    print(f"[API fetch]  {name} ({(time.perf_counter() - t0) * 1000:.0f}ms)")
+    logger.debug("API fetch   %s (%.0fms)", name, (time.perf_counter() - t0) * 1000)
     df.to_pickle(path)
     return df
 
