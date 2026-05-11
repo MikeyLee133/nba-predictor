@@ -7,18 +7,20 @@ Takes clean DataFrames and returns structured prediction results.
 """
 
 from dataclasses import dataclass
+
 import pandas as pd
+
 from nba_predictor.config import (
-    TEAM_STAT_WEIGHTS,
-    PLAYER_STAT_WEIGHTS,
-    INVERT_STATS,
-    TEAM_SCORE_WEIGHT,
-    PLAYER_SCORE_WEIGHT,
-    HOME_COURT_MULTIPLIER,
-    PLAYER_SCORE_SCALE,
-    TOP_PLAYERS_PER_TEAM,
     ABBR_TO_FULL,
+    HOME_COURT_MULTIPLIER,
+    INVERT_STATS,
+    PLAYER_SCORE_SCALE,
+    PLAYER_SCORE_WEIGHT,
+    PLAYER_STAT_WEIGHTS,
     SERIES_COMEBACK_RATES,
+    TEAM_SCORE_WEIGHT,
+    TEAM_STAT_WEIGHTS,
+    TOP_PLAYERS_PER_TEAM,
 )
 
 

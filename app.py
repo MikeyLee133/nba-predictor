@@ -7,20 +7,39 @@ Run with:  streamlit run app.py
 
 import time
 from pathlib import Path
+
 import streamlit as st
-from nba_predictor.config import (
-    PLAYOFF_MATCHUPS, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
-    TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT, HOME_COURT_MULTIPLIER,
-    RECENT_GAMES, SEASON, PLAYOFF_ROUND, HISTORY_FILE,
-)
-from nba_predictor.fetcher import fetch_team_df, fetch_player_df, fetch_seasons_parallel, FetchError, CACHE_DIR
-from nba_predictor.model import build_team_scores, build_player_scores, predict_all
-from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
+
 from nba_predictor.backtest import run_season_backtest
+from nba_predictor.config import (
+    HISTORY_FILE,
+    HOME_COURT_MULTIPLIER,
+    PLAYER_STAT_WEIGHTS,
+    PLAYOFF_MATCHUPS,
+    PLAYOFF_ROUND,
+    RECENT_GAMES,
+    SEASON,
+    TEAM_SCORE_WEIGHT,
+    TEAM_STAT_WEIGHTS,
+)
+from nba_predictor.fetcher import CACHE_DIR, FetchError, fetch_player_df, fetch_seasons_parallel, fetch_team_df
 from nba_predictor.historical import HISTORICAL_PLAYOFFS
-from nba_predictor.ml_model import build_training_records, cross_validate_loo_season, train, predict_win_probability, feature_importances, get_team_stats
-from nba_predictor.model import SeriesPrediction
-from nba_predictor.ui import show_tab, show_comparison, show_live_series, show_history, show_backtest, show_ml_predictions
+from nba_predictor.ml_model import (
+    build_training_records,
+    cross_validate_loo_season,
+    get_team_stats,
+    predict_win_probability,
+    train,
+)
+from nba_predictor.model import SeriesPrediction, build_player_scores, build_team_scores, predict_all
+from nba_predictor.ui import (
+    show_backtest,
+    show_comparison,
+    show_history,
+    show_live_series,
+    show_ml_predictions,
+    show_tab,
+)
 
 st.set_page_config(page_title="NBA Playoff Predictor", page_icon="🏀", layout="wide")
 st.title(f"🏀 NBA Playoff Predictor — {SEASON}")

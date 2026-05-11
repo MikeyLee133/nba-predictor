@@ -7,14 +7,14 @@ All rendering logic lives here; app.py only wires data to these functions.
 
 from pathlib import Path
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-from nba_predictor.config import ABBR_TO_FULL, FULL_TO_ABBR, TOP_PLAYERS_PER_TEAM
-from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
-from nba_predictor.model import SeriesPrediction, adjust_for_series_score
 from nba_predictor.backtest import BacktestResult, backtest_accuracy
+from nba_predictor.config import ABBR_TO_FULL, FULL_TO_ABBR, TOP_PLAYERS_PER_TEAM
+from nba_predictor.history import accuracy_stats, load_history, record_outcome, save_predictions
 from nba_predictor.ml_model import TrainedModel, feature_importances
+from nba_predictor.model import SeriesPrediction, adjust_for_series_score
 
 
 def predictions_df(preds: list[SeriesPrediction]) -> pd.DataFrame:

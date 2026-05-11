@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   push:
@@ -20,7 +20,13 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install ".[dev]"
 
-      - name: Run tests
-        run: pytest --tb=short -q
+      - name: Lint (ruff)
+        run: ruff check nba_predictor/ app.py main.py
+
+      - name: Type check (mypy)
+        run: mypy nba_predictor/ --ignore-missing-imports
+
+      - name: Tests (pytest)
+        run: pytest

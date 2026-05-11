@@ -2,9 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies first (layer-cached unless requirements.txt changes)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies first (layer-cached unless pyproject.toml changes)
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
 # Copy source
 COPY . .

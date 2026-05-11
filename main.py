@@ -12,9 +12,9 @@ import logging
 import sys
 
 from nba_predictor.config import PLAYOFF_MATCHUPS
-from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError
-from nba_predictor.model import build_team_scores, build_player_scores, predict_all
-from nba_predictor.display import print_predictions, print_top_players, print_model_summary
+from nba_predictor.display import print_model_summary, print_predictions, print_top_players
+from nba_predictor.fetcher import FetchError, fetch_player_df, fetch_team_df
+from nba_predictor.model import build_player_scores, build_team_scores, predict_all
 
 logging.basicConfig(
     level=logging.INFO,

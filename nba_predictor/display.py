@@ -9,10 +9,18 @@ All data arrives as arguments — no global state accessed here.
 
 import pandas as pd
 from tabulate import tabulate
+
 from nba_predictor.config import (
-    ABBR_TO_FULL, TEAM_STAT_WEIGHTS, PLAYER_STAT_WEIGHTS,
-    SEASON, TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT,
-    TOP_PLAYERS_PER_TEAM, RECENT_GAMES, HOME_COURT_MULTIPLIER, PLAYOFF_ROUND,
+    ABBR_TO_FULL,
+    HOME_COURT_MULTIPLIER,
+    PLAYER_SCORE_WEIGHT,
+    PLAYER_STAT_WEIGHTS,
+    PLAYOFF_ROUND,
+    RECENT_GAMES,
+    SEASON,
+    TEAM_SCORE_WEIGHT,
+    TEAM_STAT_WEIGHTS,
+    TOP_PLAYERS_PER_TEAM,
 )
 from nba_predictor.model import SeriesPrediction
 

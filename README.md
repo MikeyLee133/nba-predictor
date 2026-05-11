@@ -21,7 +21,8 @@ nba_predictor/
 ## Install
 
 ```bash
-pip install -r requirements.txt
+pip install .          # production dependencies
+pip install ".[dev]"   # include pytest, ruff, mypy
 ```
 
 ## Run

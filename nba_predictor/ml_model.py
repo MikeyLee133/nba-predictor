@@ -8,7 +8,7 @@ Calibrated to produce reliable win probabilities on small datasets.
 All functions are pure — data fetching is the caller's responsibility.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd

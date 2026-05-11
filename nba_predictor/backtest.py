@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from nba_predictor.model import build_team_scores, build_player_scores, predict_all
+from nba_predictor.model import build_player_scores, build_team_scores, predict_all
 
 
 @dataclass
