@@ -31,6 +31,17 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+**REST API:**
+```bash
+uvicorn nba_predictor.api:app --reload
+```
+Interactive docs available at `http://localhost:8000/docs`.
+
+**Docker (runs both Streamlit and API together):**
+```bash
+docker compose up --build
+```
+
 **Command line:**
 ```bash
 python main.py

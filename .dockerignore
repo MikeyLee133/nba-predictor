@@ -1,0 +1,9 @@
+.venv/
+.data_cache/
+.git/
+.github/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+prediction_history.json

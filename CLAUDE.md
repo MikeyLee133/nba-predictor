@@ -14,6 +14,9 @@ uvicorn nba_predictor.api:app --reload
 # CLI
 python main.py
 
+# Docker (runs Streamlit on :8501 and FastAPI on :8000)
+docker compose up --build
+
 # Install dependencies
 pip install -r requirements.txt
 
