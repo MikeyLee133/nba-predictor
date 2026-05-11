@@ -8,6 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Web app (primary interface)
 streamlit run app.py
 
+# REST API
+uvicorn nba_predictor.api:app --reload
+
 # CLI
 python main.py
 
