@@ -7,6 +7,7 @@ Caches each result to disk for 24 hours.
 
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -115,3 +116,30 @@ def _fetch_raw_player_df(last_n: int = 0, season: str = SEASON) -> pd.DataFrame:
 def fetch_player_df(last_n: int = 0, force: bool = False, season: str = SEASON) -> pd.DataFrame:
     """Return player stats DataFrame. last_n=0 means full season."""
     return _load_or_build(f"player_stats_{season}_{last_n}", force, lambda: _fetch_raw_player_df(last_n, season))
+
+
+def fetch_seasons_parallel(seasons: list[str]) -> dict[str, dict[str, pd.DataFrame]]:
+    """
+    Fetch team and player stats for multiple seasons concurrently.
+    Returns {season: {"team": DataFrame, "player": DataFrame}}.
+    Failed seasons are omitted and logged as warnings.
+    """
+    if not seasons:
+        return {}
+
+    results: dict[str, dict[str, pd.DataFrame]] = {}
+
+    def _fetch_one(season: str) -> tuple[str, pd.DataFrame, pd.DataFrame]:
+        return season, fetch_team_df(season=season), fetch_player_df(season=season)
+
+    with ThreadPoolExecutor(max_workers=min(len(seasons), 4)) as executor:
+        futures = {executor.submit(_fetch_one, s): s for s in seasons}
+        for future in as_completed(futures):
+            season = futures[future]
+            try:
+                s, team_df, player_df = future.result()
+                results[s] = {"team": team_df, "player": player_df}
+            except FetchError as exc:
+                logger.warning("Failed to fetch %s: %s", season, exc)
+
+    return results

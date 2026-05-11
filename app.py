@@ -13,7 +13,7 @@ from nba_predictor.config import (
     TEAM_SCORE_WEIGHT, PLAYER_SCORE_WEIGHT, HOME_COURT_MULTIPLIER,
     RECENT_GAMES, SEASON, PLAYOFF_ROUND, HISTORY_FILE,
 )
-from nba_predictor.fetcher import fetch_team_df, fetch_player_df, FetchError, CACHE_DIR
+from nba_predictor.fetcher import fetch_team_df, fetch_player_df, fetch_seasons_parallel, FetchError, CACHE_DIR
 from nba_predictor.model import build_team_scores, build_player_scores, predict_all
 from nba_predictor.history import save_predictions, record_outcome, load_history, accuracy_stats
 from nba_predictor.backtest import run_season_backtest
@@ -174,31 +174,26 @@ with tab5:
     show_history(season_preds, PLAYOFF_ROUND, history_path)
 with tab6:
     if st.button("▶ Run Backtest"):
+        with st.spinner("Fetching all historical seasons in parallel..."):
+            season_data = fetch_seasons_parallel(list(HISTORICAL_PLAYOFFS.keys()))
         backtest_results = []
         for hist_season, data in HISTORICAL_PLAYOFFS.items():
-            with st.spinner(f"Fetching {hist_season} stats..."):
-                try:
-                    hist_team_df   = fetch_team_df(season=hist_season)
-                    hist_player_df = fetch_player_df(season=hist_season)
-                    backtest_results += run_season_backtest(
-                        hist_season, data["matchups"], data["outcomes"],
-                        hist_team_df, hist_player_df,
-                    )
-                except FetchError as e:
-                    st.error(f"Could not fetch {hist_season}: {e}")
+            if hist_season not in season_data:
+                st.error(f"Could not fetch {hist_season} — skipping.")
+                continue
+            backtest_results += run_season_backtest(
+                hist_season, data["matchups"], data["outcomes"],
+                season_data[hist_season]["team"],
+                season_data[hist_season]["player"],
+            )
         st.session_state["backtest_results"] = backtest_results
     show_backtest(st.session_state.get("backtest_results", []))
 with tab7:
     if st.button("▶ Train ML Model"):
-        season_team_dfs   = {}
-        season_player_dfs = {}
-        for hist_season in HISTORICAL_PLAYOFFS:
-            with st.spinner(f"Fetching {hist_season} stats..."):
-                try:
-                    season_team_dfs[hist_season]   = fetch_team_df(season=hist_season)
-                    season_player_dfs[hist_season] = fetch_player_df(season=hist_season)
-                except FetchError as e:
-                    st.error(f"Could not fetch {hist_season}: {e}")
+        with st.spinner("Fetching all historical seasons in parallel..."):
+            season_data = fetch_seasons_parallel(list(HISTORICAL_PLAYOFFS.keys()))
+        season_team_dfs   = {s: d["team"]   for s, d in season_data.items()}
+        season_player_dfs = {s: d["player"] for s, d in season_data.items()}
         if season_team_dfs:
             records  = build_training_records(HISTORICAL_PLAYOFFS, season_team_dfs, season_player_dfs)
             cv_stats = cross_validate_loo_season(records)

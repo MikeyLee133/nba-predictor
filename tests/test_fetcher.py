@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import pytest
 
-from nba_predictor.fetcher import _cache_valid, _load_or_build, FetchError
+from nba_predictor.fetcher import _cache_valid, _load_or_build, FetchError, fetch_seasons_parallel
 
 
 # ── _cache_valid ──────────────────────────────────────────────────────────────
@@ -74,3 +74,59 @@ def test_load_or_build_creates_cache_dir(tmp_path, monkeypatch):
     assert not cache_dir.exists()
     _load_or_build("data", force=False, build_fn=lambda: pd.DataFrame({"v": [1]}))
     assert cache_dir.exists()
+
+
+# ── fetch_seasons_parallel ────────────────────────────────────────────────────
+
+def _mock_fetchers(monkeypatch):
+    """Replace fetch_team_df and fetch_player_df with fast stubs."""
+    def mock_team(last_n=0, force=False, season="2025-26"):
+        return pd.DataFrame({"team": [f"Team_{season}"], "season": [season]})
+
+    def mock_player(last_n=0, force=False, season="2025-26"):
+        return pd.DataFrame({"player": [f"Player_{season}"], "season": [season]})
+
+    monkeypatch.setattr("nba_predictor.fetcher.fetch_team_df",   mock_team)
+    monkeypatch.setattr("nba_predictor.fetcher.fetch_player_df", mock_player)
+
+
+def test_fetch_seasons_parallel_returns_all_seasons(monkeypatch):
+    _mock_fetchers(monkeypatch)
+    results = fetch_seasons_parallel(["2022-23", "2023-24"])
+    assert set(results.keys()) == {"2022-23", "2023-24"}
+
+
+def test_fetch_seasons_parallel_each_result_has_team_and_player(monkeypatch):
+    _mock_fetchers(monkeypatch)
+    results = fetch_seasons_parallel(["2023-24"])
+    assert "team"   in results["2023-24"]
+    assert "player" in results["2023-24"]
+
+
+def test_fetch_seasons_parallel_data_matches_season(monkeypatch):
+    _mock_fetchers(monkeypatch)
+    results = fetch_seasons_parallel(["2022-23", "2023-24"])
+    assert results["2022-23"]["team"]["season"].iloc[0] == "2022-23"
+    assert results["2023-24"]["team"]["season"].iloc[0] == "2023-24"
+
+
+def test_fetch_seasons_parallel_omits_failed_seasons(monkeypatch):
+    def flaky_team(last_n=0, force=False, season="2025-26"):
+        if season == "2022-23":
+            raise FetchError("API error")
+        return pd.DataFrame({"team": [f"Team_{season}"]})
+
+    def mock_player(last_n=0, force=False, season="2025-26"):
+        return pd.DataFrame({"player": [f"Player_{season}"]})
+
+    monkeypatch.setattr("nba_predictor.fetcher.fetch_team_df",   flaky_team)
+    monkeypatch.setattr("nba_predictor.fetcher.fetch_player_df", mock_player)
+
+    results = fetch_seasons_parallel(["2022-23", "2023-24"])
+    assert "2022-23" not in results
+    assert "2023-24" in results
+
+
+def test_fetch_seasons_parallel_empty_input(monkeypatch):
+    _mock_fetchers(monkeypatch)
+    assert fetch_seasons_parallel([]) == {}
