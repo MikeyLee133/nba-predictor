@@ -190,8 +190,7 @@ def get_series_prediction(
     summary="Playoff team scores",
 )
 def get_teams(
-    team_df:   pd.DataFrame = Depends(get_team_data),
-    player_df: pd.DataFrame = Depends(get_player_data),
+    team_df: pd.DataFrame = Depends(get_team_data),
 ):
     """
     Returns composite scores for all current playoff teams.

@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from nba_api.stats.endpoints import LeagueDashTeamStats, LeagueDashPlayerStats
 
-from nba_predictor.config import SEASON, CACHE_TTL_HOURS
+from nba_predictor.config import SEASON, CACHE_TTL_HOURS, API_SLEEP_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ def _fetch_measures(endpoint_cls, last_n: int, base_cols: dict, adv_cols: dict, 
         timeout=30,
     ).get_data_frames()[0]
 
-    time.sleep(1)
+    time.sleep(API_SLEEP_SECONDS)
 
     adv = endpoint_cls(
         season=season,

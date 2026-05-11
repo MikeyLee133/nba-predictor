@@ -113,8 +113,7 @@ def train(records: list[dict]) -> TrainedModel:
     scaler = StandardScaler()
     X_s = scaler.fit_transform(X)
     clf  = _fit_calibrated(X_s, y)
-    train_acc = round(float((np.array([1 if p >= 0.5 else 0
-                                       for p in clf.predict_proba(X_s)[:, 1]]) == y).mean() * 100), 1)
+    train_acc = round(float(np.mean((clf.predict_proba(X_s)[:, 1] >= 0.5) == y) * 100), 1)
     return TrainedModel(
         classifier=clf,
         scaler=scaler,

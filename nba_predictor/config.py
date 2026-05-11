@@ -42,9 +42,6 @@ ABBR_TO_FULL = {
     "POR": "Portland Trail Blazers",
     "WAS": "Washington Wizards",
     "HOU": "Houston Rockets",
-    "NOP": "New Orleans Pelicans",
-    "TOR": "Toronto Raptors",
-    "UTA": "Utah Jazz",
 }
 
 FULL_TO_ABBR = {v: k for k, v in ABBR_TO_FULL.items()}
@@ -74,6 +71,9 @@ RECENT_GAMES = 15
 
 # Disk cache TTL in hours
 CACHE_TTL_HOURS = 24
+
+# Seconds to sleep between NBA API calls (rate-limit protection)
+API_SLEEP_SECONDS = 1
 
 # Individual stat weights for the team composite score (must sum to 1.0)
 TEAM_STAT_WEIGHTS = {
