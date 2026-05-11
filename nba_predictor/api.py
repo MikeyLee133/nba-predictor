@@ -7,6 +7,9 @@ Run with:  uvicorn nba_predictor.api:app --reload
 Interactive docs: http://localhost:8000/docs
 """
 
+import time
+from threading import Lock
+
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -14,6 +17,26 @@ from pydantic import BaseModel, Field
 from nba_predictor.config import ABBR_TO_FULL, PLAYOFF_MATCHUPS, SEASON
 from nba_predictor.fetcher import fetch_player_df, fetch_team_df
 from nba_predictor.model import build_player_scores, build_team_scores, predict_all
+
+# ── In-memory cache ───────────────────────────────────────────────────────────
+# Sits on top of the disk cache to avoid repeated pickle reads within the
+# same process. TTL matches the disk cache (1 hour).
+
+_CACHE: dict[str, tuple[pd.DataFrame, float]] = {}
+_CACHE_TTL = 3600
+_CACHE_LOCK = Lock()
+
+
+def _cached_fetch(key: str, fetch_fn) -> pd.DataFrame:
+    with _CACHE_LOCK:
+        if key in _CACHE:
+            df, ts = _CACHE[key]
+            if time.time() - ts < _CACHE_TTL:
+                return df
+    df = fetch_fn()
+    with _CACHE_LOCK:
+        _CACHE[key] = (df, time.time())
+    return df
 
 # ── App metadata ──────────────────────────────────────────────────────────────
 
@@ -97,11 +120,11 @@ class TeamScoreResponse(BaseModel):
 # ── Dependencies ──────────────────────────────────────────────────────────────
 
 def get_team_data() -> pd.DataFrame:
-    return fetch_team_df()
+    return _cached_fetch("team", fetch_team_df)
 
 
 def get_player_data() -> pd.DataFrame:
-    return fetch_player_df()
+    return _cached_fetch("player", fetch_player_df)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

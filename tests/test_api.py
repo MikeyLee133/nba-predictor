@@ -2,7 +2,8 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from nba_predictor.api import app, get_team_data, get_player_data
+import nba_predictor.api as api_module
+from nba_predictor.api import app, get_team_data, get_player_data, _cached_fetch
 from nba_predictor.config import PLAYOFF_MATCHUPS, SEASON
 
 
@@ -148,3 +149,42 @@ def test_teams_have_required_fields():
 def test_teams_scores_are_numeric():
     for team in client.get("/teams").json():
         assert isinstance(team["composite_score"], (int, float))
+
+
+# ── in-memory cache ───────────────────────────────────────────────────────────
+
+def test_cached_fetch_returns_value_on_first_call():
+    calls = []
+    result = _cached_fetch("test_key_1", lambda: calls.append(1) or pd.DataFrame({"v": [1]}))
+    assert len(calls) == 1
+    assert list(result["v"]) == [1]
+
+
+def test_cached_fetch_reuses_value_on_second_call():
+    calls = []
+    fetch_fn = lambda: calls.append(1) or pd.DataFrame({"v": [42]})
+    _cached_fetch("test_key_2", fetch_fn)
+    _cached_fetch("test_key_2", fetch_fn)
+    assert len(calls) == 1  # fetch_fn only called once
+
+
+def test_cached_fetch_refreshes_after_ttl(monkeypatch):
+    calls = []
+    fetch_fn = lambda: calls.append(1) or pd.DataFrame({"v": [1]})
+
+    monkeypatch.setattr("nba_predictor.api.time", type("T", (), {"time": staticmethod(lambda: 0.0)})())
+    _cached_fetch("test_ttl_key", fetch_fn)
+
+    monkeypatch.setattr("nba_predictor.api.time",
+                        type("T", (), {"time": staticmethod(lambda: api_module._CACHE_TTL + 1)})())
+    _cached_fetch("test_ttl_key", fetch_fn)
+
+    assert len(calls) == 2  # fetched again after TTL
+
+
+def test_cached_fetch_independent_keys():
+    results = []
+    _cached_fetch("key_a", lambda: pd.DataFrame({"v": ["a"]}))
+    _cached_fetch("key_b", lambda: pd.DataFrame({"v": ["b"]}))
+    assert list(_cached_fetch("key_a", lambda: None)["v"]) == ["a"]
+    assert list(_cached_fetch("key_b", lambda: None)["v"]) == ["b"]
