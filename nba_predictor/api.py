@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from nba_predictor.config import ABBR_TO_FULL, PLAYOFF_MATCHUPS, SEASON
 from nba_predictor.fetcher import fetch_player_df, fetch_team_df
-from nba_predictor.model import build_player_scores, build_team_scores, predict_all
+from nba_predictor.model import build_player_scores, build_team_scores, predict_all, predict_series
 
 # ── In-memory cache ───────────────────────────────────────────────────────────
 # Sits on top of the disk cache to avoid repeated pickle reads within the
@@ -129,23 +129,27 @@ def get_player_data() -> pd.DataFrame:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+def _to_response(p) -> PredictionResponse:
+    return PredictionResponse(
+        series_label=p.label,
+        home=p.home,
+        home_team=ABBR_TO_FULL.get(p.home, p.home),
+        away=p.away,
+        away_team=ABBR_TO_FULL.get(p.away, p.away),
+        home_win_pct=p.home_win_pct,
+        away_win_pct=p.away_win_pct,
+        predicted_winner=p.predicted_winner,
+        predicted_winner_full=ABBR_TO_FULL.get(p.predicted_winner, p.predicted_winner),
+    )
+
+
+def _build_scores(team_df: pd.DataFrame, player_df: pd.DataFrame):
+    return build_team_scores(team_df), build_player_scores(player_df)
+
+
 def _predictions(team_df: pd.DataFrame, player_df: pd.DataFrame) -> list[PredictionResponse]:
-    team_scores   = build_team_scores(team_df)
-    player_scores = build_player_scores(player_df)
-    return [
-        PredictionResponse(
-            series_label=p.label,
-            home=p.home,
-            home_team=ABBR_TO_FULL.get(p.home, p.home),
-            away=p.away,
-            away_team=ABBR_TO_FULL.get(p.away, p.away),
-            home_win_pct=p.home_win_pct,
-            away_win_pct=p.away_win_pct,
-            predicted_winner=p.predicted_winner,
-            predicted_winner_full=ABBR_TO_FULL.get(p.predicted_winner, p.predicted_winner),
-        )
-        for p in predict_all(PLAYOFF_MATCHUPS, team_scores, player_scores)
-    ]
+    team_scores, player_scores = _build_scores(team_df, player_df)
+    return [_to_response(p) for p in predict_all(PLAYOFF_MATCHUPS, team_scores, player_scores)]
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -201,9 +205,11 @@ def get_series_prediction(
     Returns 404 if the matchup is not in the current active playoff round.
     """
     home, away = home.upper(), away.upper()
-    if not any(h == home and a == away for h, a, _ in PLAYOFF_MATCHUPS):
+    matchup = next(((h, a, label) for h, a, label in PLAYOFF_MATCHUPS if h == home and a == away), None)
+    if matchup is None:
         raise HTTPException(status_code=404, detail=f"No active matchup found for {home} vs {away}")
-    return next(p for p in _predictions(team_df, player_df) if p.home == home and p.away == away)
+    team_scores, player_scores = _build_scores(team_df, player_df)
+    return _to_response(predict_series(*matchup, team_scores, player_scores))
 
 
 @app.get(
