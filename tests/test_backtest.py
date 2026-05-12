@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from nba_predictor.backtest import BacktestResult, run_season_backtest, backtest_accuracy
+from nba_predictor.backtest import BacktestResult, run_season_backtest, backtest_accuracy, higher_seed_baseline
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -139,6 +139,63 @@ def test_accuracy_all_correct():
     stats = backtest_accuracy(results)
     assert stats["pct"] == pytest.approx(100.0)
     assert stats["correct"] == 4
+
+
+# ── higher_seed_baseline ──────────────────────────────────────────────────────
+
+def _playoffs(home_wins: list[bool]) -> dict:
+    """Build a minimal HISTORICAL_PLAYOFFS dict where home team wins according to home_wins."""
+    matchups = [(f"H{i}", f"A{i}", f"Series {i}") for i in range(len(home_wins))]
+    outcomes = {
+        f"Series {i}": (f"H{i}" if won else f"A{i}")
+        for i, won in enumerate(home_wins)
+    }
+    return {"2023-24": {"matchups": matchups, "outcomes": outcomes}}
+
+
+def test_higher_seed_baseline_all_home_wins():
+    stats = higher_seed_baseline(_playoffs([True, True, True, True]))
+    assert stats["correct"] == 4
+    assert stats["total"] == 4
+    assert stats["pct"] == pytest.approx(100.0)
+
+
+def test_higher_seed_baseline_mixed():
+    stats = higher_seed_baseline(_playoffs([True, True, False, False]))
+    assert stats["correct"] == 2
+    assert stats["total"] == 4
+    assert stats["pct"] == pytest.approx(50.0)
+
+
+def test_higher_seed_baseline_all_upsets():
+    stats = higher_seed_baseline(_playoffs([False, False, False]))
+    assert stats["correct"] == 0
+    assert stats["pct"] == pytest.approx(0.0)
+
+
+def test_higher_seed_baseline_multiple_seasons():
+    playoffs = {
+        "2022-23": {
+            "matchups": [("H0", "A0", "S0"), ("H1", "A1", "S1")],
+            "outcomes": {"S0": "H0", "S1": "A1"},
+        },
+        "2023-24": {
+            "matchups": [("H2", "A2", "S2")],
+            "outcomes": {"S2": "H2"},
+        },
+    }
+    stats = higher_seed_baseline(playoffs)
+    assert stats["correct"] == 2
+    assert stats["total"] == 3
+
+
+def test_higher_seed_baseline_skips_missing_outcomes():
+    playoffs = {"2023-24": {
+        "matchups": [("H0", "A0", "S0"), ("H1", "A1", "S1")],
+        "outcomes": {"S0": "H0"},  # S1 has no outcome
+    }}
+    stats = higher_seed_baseline(playoffs)
+    assert stats["total"] == 1
 
 
 def test_accuracy_empty_results():

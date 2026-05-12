@@ -69,3 +69,23 @@ def backtest_accuracy(results: list[BacktestResult]) -> dict:
         "total":   total,
         "pct":     round(correct / total * 100, 1) if total else 0.0,
     }
+
+
+def higher_seed_baseline(historical_playoffs: dict) -> dict:
+    """
+    Compute accuracy of always predicting the home team (higher seed) wins.
+    Used as a naive baseline to contextualise model accuracy.
+    """
+    correct = total = 0
+    for data in historical_playoffs.values():
+        for home, _away, label in data["matchups"]:
+            actual = data["outcomes"].get(label)
+            if actual is None:
+                continue
+            correct += int(actual == home)
+            total   += 1
+    return {
+        "correct": correct,
+        "total":   total,
+        "pct":     round(correct / total * 100, 1) if total else 0.0,
+    }
