@@ -5,6 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
+# First-time setup (installs git hooks — run once after cloning)
+pre-commit install
+
 # Web app (primary interface)
 streamlit run app.py
 
