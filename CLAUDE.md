@@ -31,6 +31,12 @@ pytest tests/test_model.py
 
 # Run a single test
 pytest tests/test_model.py::test_team_scores_better_team_scores_higher
+
+# Smoke test (live NBA API — validates full pipeline end-to-end)
+python scripts/smoke_test.py
+
+# Backtest (accuracy vs historical outcomes + baseline comparison)
+python scripts/run_backtest.py
 ```
 
 ## Architecture
