@@ -2,6 +2,8 @@
 
 Predicts NBA playoff series winners using live team and player stats from the official NBA Stats API.
 
+![NBA Playoff Predictor](assets/demo.gif)
+
 ## Results
 
 Backtested across **90 playoff series (2018–19 through 2023–24), all rounds**:
